@@ -1,26 +1,84 @@
 @import "tailwindcss";
 
+/*
+ * ReschEdu 디자인 토큰 — "학사 시간표(Timetable Ledger)"
+ * 학원 시간표/보강 관리라는 서비스 본질에 맞춰, 기본 Tailwind 파랑/회색 팔레트 대신
+ * 따뜻한 종이 배경 + 잉크 네이비 + 피콕그린 강조색을 쓴다.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-paper: #faf7f0;
+  --color-paper-raised: #fffdf8;
+  --color-ink: #22304a;
+  --color-ink-soft: #4e5a6c;
+  --color-ink-faint: #8b93a1;
+  --color-line: #e1dacb;
+  --color-line-soft: #efead9;
+
+  --color-accent: #2f6f64;
+  --color-accent-hover: #24564d;
+  --color-accent-soft: #dcece5;
+
+  --color-success: #4b7a4e;
+  --color-success-hover: #3d6640;
+  --color-success-soft: #e1ebe0;
+
+  --color-warning: #a87a1b;
+  --color-warning-hover: #8c6516;
+  --color-warning-soft: #f3e7c7;
+
+  --color-danger: #ae4038;
+  --color-danger-hover: #8f332c;
+  --color-danger-soft: #f4deda;
+
+  /* 시간표 블록 구분용 카테고리 색상 — 상태(성공/경고/위험/강조)와 헷갈리지 않도록
+     의도적으로 차분한 한색 계열(파랑/청록/보라/와인/브라운)로만 구성한다. */
+  --color-cat-1: #3d6088;
+  --color-cat-2: #3e7a72;
+  --color-cat-3: #6b4c6e;
+  --color-cat-4: #4a5d74;
+  --color-cat-5: #7a4256;
+  --color-cat-6: #6b4e36;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-paper: var(--color-paper);
+  --color-paper-raised: var(--color-paper-raised);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --color-ink-faint: var(--color-ink-faint);
+  --color-line: var(--color-line);
+  --color-line-soft: var(--color-line-soft);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-soft: var(--color-accent-soft);
+
+  --color-success: var(--color-success);
+  --color-success-hover: var(--color-success-hover);
+  --color-success-soft: var(--color-success-soft);
+
+  --color-warning: var(--color-warning);
+  --color-warning-hover: var(--color-warning-hover);
+  --color-warning-soft: var(--color-warning-soft);
+
+  --color-danger: var(--color-danger);
+  --color-danger-hover: var(--color-danger-hover);
+  --color-danger-soft: var(--color-danger-soft);
+
+  --color-cat-1: var(--color-cat-1);
+  --color-cat-2: var(--color-cat-2);
+  --color-cat-3: var(--color-cat-3);
+  --color-cat-4: var(--color-cat-4);
+  --color-cat-5: var(--color-cat-5);
+  --color-cat-6: var(--color-cat-6);
+
+  --font-display: var(--font-plex-serif);
+  --font-body: var(--font-pretendard);
+  --font-tabular: var(--font-plex-mono);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-pretendard), "Pretendard", -apple-system, BlinkMacSystemFont, sans-serif;
 }
