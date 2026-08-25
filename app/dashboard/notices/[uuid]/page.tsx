@@ -35,10 +35,8 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
     const router = useRouter();
     const searchParams = useSearchParams();
     const { uuid } = use(params);
-    // 🎯 [다학원 자녀 지원] 목록에서 어느 학원의 공지인지 academyId를 쿼리로 넘겨받는다(학부모가 본인
-    // 소속 학원이 아닌, 자녀가 다니는 다른 학원의 공지를 볼 수도 있으므로). 없으면 세션 값으로 대체한다.
-    // 🚨 sessionStorage는 브라우저 전용이라 서버 렌더링 시점에 접근하면 안 되므로, 렌더 바디가 아니라
-    // fetch 시점(useEffect 내부)에서만 읽는다 — resolveAcademyId 헬퍼로 그 시점마다 계산한다.
+    // academyId는 쿼리로 전달(학부모가 자녀 학원의 공지를 볼 수도 있음), 없으면 세션 값 사용.
+    // sessionStorage는 클라이언트 전용이라 렌더 바디가 아닌 fetch 시점에만 읽는다.
     const resolveAcademyId = () => searchParams.get('academyId') || sessionStorage.getItem('academyId') || '';
 
     const [myRole, setMyRole] = useState('');

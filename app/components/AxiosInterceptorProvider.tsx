@@ -4,8 +4,7 @@ import { useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
-// 로그인 토큰이 httpOnly 쿠키로 발급되므로, 모든 axios 요청이 쿠키를 함께 보내도록 전역 설정한다.
-// (레이아웃에 마운트되는 이 모듈이 로드되는 시점에 한 번만 실행되면 되므로 컴포넌트 바깥에 둔다.)
+// 로그인 토큰이 httpOnly 쿠키로 발급되므로 모든 axios 요청에 쿠키를 함께 보내도록 전역 설정
 axios.defaults.withCredentials = true;
 
 export default function AxiosInterceptorProvider() {

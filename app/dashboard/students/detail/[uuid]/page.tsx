@@ -3,8 +3,9 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
-// 🚨 교정: 경로 depth 문제를 해결하기 위해 상대 경로 칸수를 3칸으로 정확히 교정했습니다.
 import CommonMenuBar from '../../../components/commonMenuBar';
+
+const API_BASE = 'http://localhost:8080/api';
 
 interface TeacherOption {
     uuid: string;
@@ -23,8 +24,7 @@ interface ScheduleHistoryEntry {
     teacherUuid: string;
     teacherName: string;
     roomNumber: string | null;
-    // 🎯 요일마다 서로 다른 시간대를 가질 수 있다(예: 월 15시, 수 17시, 금 20시) — 요일 순 정렬되어 온다.
-    timeSlots: TimeSlot[];
+    timeSlots: TimeSlot[]; // 요일별 시간대, 요일 순 정렬되어 옴
     startDate: string | null;
     endDate: string | null;
     active: boolean;
@@ -74,22 +74,17 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
     const [shuttleDropoffLocation, setShuttleDropoffLocation] = useState('');
     const [discountType, setDiscountType] = useState('');
     const [memo, setMemo] = useState('');
-    // 🎯 주당 희망 수강 횟수 — 실제 정규 수업 배정 개수(반 배정 이력)와는 별개로 입력받는 값이다.
-    const [weeklyFrequency, setWeeklyFrequency] = useState('');
+    const [weeklyFrequency, setWeeklyFrequency] = useState(''); // 희망 횟수, 실제 배정 개수와 별개
     const [teacherUuid, setTeacherUuid] = useState('');
-    // 🎯 처음 이 학생을 불러왔을 때 담당 강사가 미배정이었는지 — select에서 강사를 고르는 순간 teacherUuid가
-    // 바로 채워지므로, "지금 편집 가능한가"는 이 원본 값 기준으로 판단해야 한다(안 그러면 고르자마자 읽기전용으로 바뀜).
+    // 최초 로드 시점의 담당 강사 배정 여부 — 편집 가능 여부 판단 기준(select로 바로 안 바뀌게)
     const [originalTeacherUuid, setOriginalTeacherUuid] = useState<string | null>(null);
     const [teacherName, setTeacherName] = useState('');
-    // 🎯 담당 강사 인계(효력일 지정) 이력 — previousTeacherName이 있으면 "OOO → OOO (N월 N일부터)"로 표시한다.
     const [previousTeacherName, setPreviousTeacherName] = useState<string | null>(null);
     const [teacherHandoverEffectiveFrom, setTeacherHandoverEffectiveFrom] = useState<string | null>(null);
     const [isTeacherHandoverModalOpen, setIsTeacherHandoverModalOpen] = useState(false);
     const [handoverForm, setHandoverForm] = useState({ newTeacherUuid: '', effectiveFrom: '' });
     const [isSubmittingHandover, setIsSubmittingHandover] = useState(false);
-    // 🚨 Date.toISOString()은 UTC 기준으로 변환하므로, UTC보다 시간대가 빠른 한국(KST, UTC+9)에서는
-    // 자정~오전 9시 사이에 호출하면 "오늘"이 어제로 밀리는 문제가 있다 — getFullYear/Month/Date로 로컬
-    // 기준 날짜 문자열을 직접 만들어 이 문제를 피한다.
+    // toISOString()은 UTC 기준이라 KST 자정~오전 9시 사이 "오늘"이 어제로 밀리는 문제가 있어 로컬 기준으로 직접 조립
     const formatLocalDateISO = (d: Date): string => {
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -97,15 +92,13 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
         return `${y}-${m}-${day}`;
     };
     const today = formatLocalDateISO(new Date());
-    // 🎯 수강 스케줄 배정의 "적용 시작일" 기본값은 오늘이 아니라 이번 달 1일로 잡는다 — 수강 등록/변경이
-    // 보통 그 달 전체를 기준으로 이뤄지는 경우가 많아, 매번 날짜를 고쳐 입력하지 않아도 되게 하기 위함.
+    // 스케줄 적용 시작일 기본값은 이번 달 1일 (등록/변경이 보통 월 단위로 이뤄짐)
     const firstDayOfThisMonth = (() => {
         const d = new Date();
         return formatLocalDateISO(new Date(d.getFullYear(), d.getMonth(), 1));
     })();
 
-    // 🎯 [수업 스케줄 배정 / 요일 변경] 관련 상태 — [시간표 관리]의 수업 추가 폼과 완전히 동일한 필드 구성
-    // (요일마다 서로 다른 시간대를 자유롭게 조합할 수 있다)
+    // [시간표 관리]의 수업 추가 폼과 동일한 필드 구성
     const initialScheduleForm = {
         fromRegularClassUuid: '',
         title: '',
@@ -129,12 +122,11 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
         }
     }, [uuid]);
 
-    // 🔄 [수강 히스토리] 반 배정 이력 + 수강 기간 변경 이력 조회
     const fetchScheduleHistory = async () => {
         setIsLoadingHistory(true);
         try {
             const academyId = sessionStorage.getItem('academyId');
-            const res = await axios.get(`http://localhost:8080/api/members/students/${uuid}/history?academyId=${academyId}`);
+            const res = await axios.get(`${API_BASE}/members/students/${uuid}/history?academyId=${academyId}`);
             setScheduleHistory(res.data?.scheduleHistory || []);
             setEnrollmentPeriodHistory(res.data?.enrollmentPeriodHistory || []);
         } catch (error) {
@@ -144,7 +136,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
         }
     };
 
-    // 🎯 지금 이 순간 활성 상태인 반 배정만 추출 (요일 변경 시 "종료할 기존 반" 후보)
+    // 요일 변경 시 "종료할 기존 반" 후보 (현재 활성 배정만)
     const activeScheduleEntries = scheduleHistory.filter((h) => h.active);
 
     const DEFAULT_SLOT_START = '15:00';
@@ -176,8 +168,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
         }));
     };
 
-    // 🎯 "이 반에서 요일 변경" 클릭 시: 기존 반의 요일/시간/강의실 등을 폼에 미리 채워 넣어
-    //   [시간표 관리] 화면에서 블록을 클릭해 수정하는 것과 동일한 사용 경험을 제공한다.
+    // "이 반에서 요일 변경" 클릭 시 기존 반의 요일/시간/강의실을 폼에 미리 채움
     const selectFromEntry = (entry: ScheduleHistoryEntry) => {
         setScheduleForm((prev) => ({
             ...prev,
@@ -193,10 +184,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
         }));
     };
 
-    // 🎯 [수강생 관리]에서도 [시간표 관리]와 완전히 동일한 로직으로 배정한다:
-    //   1) 사용자가 직접 고른 요일/시간/강의실로 새 정규 수업을 생성하고,
-    //   2) 그 수업에 기간을 지정해 학생을 배정(또는 기존 배정을 종료하고 새 배정을 시작)한다.
-    //   이렇게 생성된 반은 [시간표 관리] 화면과 완전히 같은 데이터(RegularClass)이므로 즉시 그대로 반영된다.
+    // [시간표 관리]와 동일한 로직: 새 정규 수업 생성 후 그 수업에 기간을 지정해 학생 배정
     const handleScheduleChangeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (scheduleForm.timeSlots.length === 0) {
@@ -218,11 +206,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
             setIsSubmittingSchedule(true);
             const academyId = sessionStorage.getItem('academyId');
 
-            // 🎯 스마트 배정: 요청한 요일 중 같은 강사가 이미 같은 요일·시간으로 진행 중인 반이 있으면
-            // 새 반을 만들지 않고 그 반에 (겹치는 요일만) 합류시킨다. 겹치지 않는 요일만 모아 새 반이 만들어진다.
-            // (기존 배정이 있었다면 fromRegularClassUuid를 통해 자동으로 전날까지 종료 처리됨)
+            // 스마트 배정: 같은 강사가 이미 같은 요일·시간에 진행 중인 반이 있으면 그 반에 합류, 아니면 새 반 생성
             await axios.post(
-                `http://localhost:8080/api/regular-classes/schedule-smart-assign?academyId=${academyId}`,
+                `${API_BASE}/regular-classes/schedule-smart-assign?academyId=${academyId}`,
                 {
                     studentUuid: uuid,
                     teacherUuid: scheduleForm.teacherUuid,
@@ -253,17 +239,15 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
             const role = sessionStorage.getItem('userRole') || '';
             setMyRole(role);
 
-            // 🎯 강사 목록은 원장/강사 모두에게 필요하다 — 강사도 담당 미배정 학생에게는 담당 강사를 지정할 수 있다.
-            const teachersRes = await axios.get(`http://localhost:8080/api/members/teachers?academyId=${academyId}`);
+            const teachersRes = await axios.get(`${API_BASE}/members/teachers?academyId=${academyId}`);
             setTeachersOptions(teachersRes.data || []);
 
             if (role === 'TEACHER') {
-                // 강사가 직접 등록하는 경우 본인을 담당 강사로 자동 배정 (시간표 관리 화면과 동일한 규칙)
                 const teacherUuidSelf = sessionStorage.getItem('userUuid') || '';
                 setScheduleForm((prev) => ({ ...prev, teacherUuid: teacherUuidSelf }));
             }
 
-            const studentRes = await axios.get(`http://localhost:8080/api/members/students/${uuid}?academyId=${academyId}`);
+            const studentRes = await axios.get(`${API_BASE}/members/students/${uuid}?academyId=${academyId}`);
 
             const s = studentRes.data;
             if (s) {
@@ -280,7 +264,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                 setDiscountType(s.discountType || '');
                 setMemo(s.memo || '');
                 setWeeklyFrequency(s.weeklyFrequency != null ? String(s.weeklyFrequency) : '');
-                setTeacherUuid(s.teacherUuid || ''); // 백엔드가 넘겨준 강사 UUID 파싱 바인딩
+                setTeacherUuid(s.teacherUuid || '');
                 setOriginalTeacherUuid(s.teacherUuid || '');
                 setTeacherName(s.teacherName || '배정 없음');
                 setPreviousTeacherName(s.previousTeacherName || null);
@@ -318,11 +302,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                 weeklyFrequency: weeklyFrequency.trim() !== '' ? Number(weeklyFrequency) : null,
             };
 
-            await axios.put(`http://localhost:8080/api/members/students/${uuid}?academyId=${academyId}`, requestBody);
+            await axios.put(`${API_BASE}/members/students/${uuid}?academyId=${academyId}`, requestBody);
 
             alert('수강생 정보가 성공적으로 변경되었습니다.');
-            // 🎯 인적사항과 반 배정을 모두 고쳐야 하는 경우가 많아, 저장 후 목록으로 넘기지 않고 이 화면에
-            // 그대로 머문다 — 목록으로 가고 싶으면 별도의 "목록으로" 버튼을 누르면 된다.
             await loadInitialData();
         } catch (error) {
             alert('정보 수정 중 서버 오류가 발생했습니다.');
@@ -331,9 +313,8 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
         }
     };
 
-    // ─── 담당 강사 인계(효력일 지정) ──────────────────────────────────────
-    // 🎯 미배정 상태에서 처음 지정할 때는 즉시(오늘부터) 배정, 이미 배정된 상태에서 바꿀 때는 모달에서
-    // 효력일을 지정한다 — 둘 다 같은 백엔드 엔드포인트(scheduleStudentTeacherHandover)를 탄다.
+    // ─── 담당 강사 인계(효력일 지정) ───
+    // 미배정 상태에서 처음 지정하면 즉시(오늘부터) 배정, 이미 배정된 상태면 모달에서 효력일 지정
     const openTeacherHandoverModal = () => {
         setHandoverForm({ newTeacherUuid: '', effectiveFrom: today });
         setIsTeacherHandoverModalOpen(true);
@@ -344,7 +325,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
         setIsSubmittingHandover(true);
         try {
             await axios.post(
-                `http://localhost:8080/api/members/students/${uuid}/teacher-handover?academyId=${academyId}`,
+                `${API_BASE}/members/students/${uuid}/teacher-handover?academyId=${academyId}`,
                 { newTeacherUuid, effectiveFrom }
             );
             setIsTeacherHandoverModalOpen(false);
@@ -383,8 +364,6 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                         <span>&gt;</span>
                         <span className="text-ink font-semibold">원생 상세 정보 설정</span>
                     </div>
-                    {/* 🎯 인적사항/반 배정을 저장해도 이 화면에 그대로 머무르므로(둘 다 고칠 때 상세화면에 두 번
-                        들어오지 않아도 되도록), 목록으로 돌아가고 싶을 때 누르는 버튼을 별도로 둔다. */}
                     <button
                         type="button"
                         onClick={() => router.push('/dashboard/students')}
@@ -424,8 +403,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                                 <div>
                                     <label htmlFor="teacherSelect" className="block text-xs font-semibold text-ink-soft mb-1">담당 배정 선생님</label>
                                     {!originalTeacherUuid ? (
-                                        // 🎯 담당 미배정 상태 — 원장/강사 모두 바로 지정할 수 있다(효력일 개념이 필요 없으므로
-                                        // 모달 없이 선택 즉시 오늘 날짜로 배정한다).
+                                        // 미배정 상태: 선택 즉시 오늘 날짜로 배정 (모달 불필요)
                                         <select
                                             id="teacherSelect"
                                             value={teacherUuid}
@@ -442,8 +420,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                                             ))}
                                         </select>
                                     ) : (
-                                        // 🎯 이미 배정된 상태 — 원장/강사 모두 "변경"으로 효력일을 지정해 인계할 수 있다
-                                        // (즉시 덮어쓰지 않는다: RegularClassService.changeClassTeacher와 동일한 정책).
+                                        // 배정된 상태: "변경"으로 효력일을 지정해 인계 (즉시 덮어쓰지 않음)
                                         <div className="flex items-center gap-2">
                                             <input
                                                 id="teacherSelect"
@@ -631,7 +608,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                     </div>
                 </form>
 
-                {/* 🎯 [수업 스케줄 배정 / 요일 변경] — 시간표 관리 화면과 실시간으로 동일한 데이터(RegularClassStudent)를 공유한다 */}
+                {/* 수업 스케줄 배정 / 요일 변경 — 시간표 관리 화면과 데이터 공유 */}
                 <div className="bg-paper-raised border border-line rounded-lg shadow-sm overflow-hidden">
                     <div className="p-6 bg-gradient-to-r from-accent-soft to-warning-soft/50 border-b border-line-soft flex items-center justify-between">
                         <div>
@@ -914,7 +891,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                 </div>
             )}
 
-            {/* 🎯 [수강 히스토리] 모달: 반 배정(요일) 이력 + 수강 기간 변경 이력 */}
+            {/* 수강 히스토리 모달: 반 배정(요일) 이력 + 수강 기간 변경 이력 */}
             {isHistoryModalOpen && (
                 <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
                     <div className="bg-paper-raised w-full max-w-xl rounded-lg shadow-lg my-8 animate-fade-in">

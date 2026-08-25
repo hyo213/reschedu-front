@@ -71,18 +71,16 @@ export default function MyProfilePage() {
     const [newPasswordConfirm, setNewPasswordConfirm] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // 🎯 학부모 전용: 자녀 정보 추가/수정
     const [children, setChildren] = useState<MyChildDetail[]>([]);
     const [isLoadingChildren, setIsLoadingChildren] = useState(false);
     const [isChildModalOpen, setIsChildModalOpen] = useState(false);
     const [editingChildUuid, setEditingChildUuid] = useState<string | null>(null);
     const [childForm, setChildForm] = useState<ChildFormState>(EMPTY_CHILD_FORM);
     const [isSubmittingChild, setIsSubmittingChild] = useState(false);
-    // 🎯 [다학원 자녀 지원] 수정 중인 자녀가 등록된 학원 목록 (+ 새 학원 추가 액션용 로딩 상태)
+    // 수정 중인 자녀가 등록된 학원 목록 + 새 학원 추가 액션용 로딩 상태
     const [editingChildAcademies, setEditingChildAcademies] = useState<ChildAcademyRegistration[]>([]);
     const [isAddingAcademy, setIsAddingAcademy] = useState(false);
 
-    // 🎯 [다학원 자녀 지원] 자녀 추가 시 등록할 학원을 검색해서 고른다 (회원가입 화면과 동일한 방식)
     const [academyKeyword, setAcademyKeyword] = useState('');
     const [academySearchResults, setAcademySearchResults] = useState<AcademySearchResult[]>([]);
     const [selectedAcademy, setSelectedAcademy] = useState<AcademySearchResult | null>(null);
@@ -142,7 +140,7 @@ export default function MyProfilePage() {
         setIsChildModalOpen(true);
     };
 
-    // 🎯 [다학원 자녀 지원] 이미 있는 자녀를 다른 학원에도 등록한다(자녀 자체는 새로 안 만듦)
+    // 기존 자녀를 다른 학원에도 등록(자녀 레코드는 새로 만들지 않음)
     const handleAddAcademyToChild = async () => {
         if (!editingChildUuid || !selectedAcademy) return;
         try {
@@ -210,7 +208,6 @@ export default function MyProfilePage() {
             const response = await axios.get('http://localhost:8080/api/members/me');
             const data: MyProfile = response.data;
             setProfile(data);
-            // 🎯 회원가입 시 입력했던 기본 정보를 입력 폼에 미리 채워 넣는다 (Pre-filled)
             setName(data.name);
             setPhone(data.phone);
             if (data.role === 'PARENT') {
@@ -242,7 +239,7 @@ export default function MyProfilePage() {
                 newPassword: newPassword.trim() === '' ? null : newPassword,
             });
 
-            // 🎯 메뉴바 상단 환영 메시지도 즉시 새 이름으로 반영되도록 세션 정보를 함께 갱신
+            // 메뉴바 환영 메시지도 즉시 새 이름으로 반영되도록 세션 값 갱신
             sessionStorage.setItem('userName', name.trim());
 
             setCurrentPassword('');

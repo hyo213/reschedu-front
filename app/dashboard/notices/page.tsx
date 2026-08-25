@@ -55,8 +55,7 @@ export default function NoticeListPage() {
     const [form, setForm] = useState<NoticeFormState>(EMPTY_FORM);
     const [isSaving, setIsSaving] = useState(false);
 
-    // 🎯 [다학원 자녀 지원] 학부모는 자녀가 다니는 학원 중 하나를 골라서 그 학원의 공지만 본다.
-    // 원장/강사는 소속 학원이 하나뿐이므로 기존처럼 세션에 저장된 academyId를 그대로 쓴다.
+    // 학부모는 자녀가 다니는 여러 학원 중 하나를 골라 그 학원의 공지만 본다.
     const [academies, setAcademies] = useState<AcademyOption[]>([]);
     const [selectedAcademyId, setSelectedAcademyId] = useState('');
 
@@ -159,7 +158,6 @@ export default function NoticeListPage() {
                     )}
                 </div>
 
-                {/* 🏢 [다학원 자녀 지원] 학부모이고 자녀가 다니는 학원이 여러 곳이면 선택 가능 */}
                 {myRole === 'PARENT' && academies.length > 1 && (
                     <div className="mb-4 flex items-center gap-2">
                         <label className="text-xs font-bold text-ink-faint">🏢 학원 선택</label>

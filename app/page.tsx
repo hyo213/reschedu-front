@@ -20,8 +20,7 @@ export default function LoginPage() {
         password,
       }, { withCredentials: true });
 
-      // 🚨 accessToken은 더 이상 응답 바디로 내려오지 않는다 — 서버가 httpOnly 쿠키로 발급하므로
-      // JS(sessionStorage)에서는 애초에 값을 읽을 수도, 저장할 수도 없다(XSS로부터 토큰 보호).
+      // accessToken은 httpOnly 쿠키로만 발급되어 JS에서 접근 불가 — sessionStorage엔 표시용 값만 저장
       sessionStorage.setItem('userName', response.data.name);
       sessionStorage.setItem('userRole', response.data.role);
       sessionStorage.setItem('academyId', response.data.academyId);

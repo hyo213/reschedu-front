@@ -13,8 +13,7 @@ interface StudentTicketCount {
 
 interface MakeupTicketDetail {
     ticketUuid: string;
-    // 🎯 수동 지급(MANUAL_GRANT) 티켓은 특정 수업/날짜에 묶여 있지 않으므로 null일 수 있다.
-    absentDate: string | null;
+    absentDate: string | null; // 수동 지급(MANUAL_GRANT) 티켓은 특정 수업/날짜에 묶이지 않아 null 가능
     classTitle: string | null;
     teacherName: string | null;
     source: 'STUDENT_ABSENCE' | 'ACADEMY_HOLIDAY' | 'MANUAL_GRANT';
@@ -65,7 +64,6 @@ export default function MakeupCenterPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [searchKeyword, setSearchKeyword] = useState('');
 
-    // ⚙️ 보강권 전체 정책(원장 전용) — 최대 보유 개수 / 월 발급 제한 / 기본 유효기간, 각각 "제한 없음" 가능
     const [policy, setPolicy] = useState<MakeupTicketPolicy>({ maxOutstandingTickets: null, monthlyIssueLimit: null, defaultValidityDays: null });
     const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
     const [policyForm, setPolicyForm] = useState({
@@ -75,17 +73,15 @@ export default function MakeupCenterPage() {
     });
     const [isSubmittingPolicy, setIsSubmittingPolicy] = useState(false);
 
-    // 🎯 잔여 개수 클릭 시 펼쳐지는 상세 내역(원래 수업일 목록) — 학생 uuid별로 캐시해 재클릭 시 재요청하지 않는다.
+    // 상세 내역은 학생 uuid별로 캐시해 재클릭 시 재요청하지 않는다.
     const [expandedStudentUuid, setExpandedStudentUuid] = useState<string | null>(null);
     const [detailsByStudent, setDetailsByStudent] = useState<Record<string, MakeupTicketDetail[]>>({});
     const [isLoadingDetail, setIsLoadingDetail] = useState<string | null>(null);
 
-    // 📝 보강 신청 대기 목록 (원장/강사 전용 수락/거절)
     const [pendingRequests, setPendingRequests] = useState<MakeupRequestItem[]>([]);
     const [isLoadingPending, setIsLoadingPending] = useState(false);
     const [decidingRequestUuid, setDecidingRequestUuid] = useState<string | null>(null);
 
-    // 🎁 보강권 수동 부여(초기/추가 지급) 모달
     const [isGrantModalOpen, setIsGrantModalOpen] = useState(false);
     const [grantForm, setGrantForm] = useState({ studentUuid: '', quantity: 1, memo: '', validityDays: '', unlimited: false });
     const [isSubmittingGrant, setIsSubmittingGrant] = useState(false);
@@ -188,7 +184,6 @@ export default function MakeupCenterPage() {
         }
     };
 
-    // 🎯 잔여 개수 클릭: 이미 펼쳐져 있으면 접고, 아니면 (필요 시 조회 후) 펼친다.
     const handleToggleDetail = async (studentUuid: string) => {
         if (expandedStudentUuid === studentUuid) {
             setExpandedStudentUuid(null);
@@ -215,8 +210,7 @@ export default function MakeupCenterPage() {
     };
 
     const openGrantModal = (studentUuid?: string) => {
-        // 🎯 유효기간 입력칸은 [보강권 전체 설정]의 기본값으로 미리 채워둔다 — 정책이 "제한 없음"이면
-        // 이 지급 건도 기본은 "기한 제한 없음" 체크로 시작한다.
+        // 유효기간은 정책의 기본값으로 미리 채운다(정책이 "제한 없음"이면 이 입력도 그렇게 시작).
         setGrantForm({
             studentUuid: studentUuid || counts[0]?.studentUuid || '',
             quantity: 1,
@@ -227,7 +221,6 @@ export default function MakeupCenterPage() {
         setIsGrantModalOpen(true);
     };
 
-    // 🎁 보강권 수동 지급: 앱 도입 전 보유하던 잔여 보강권을 등록하거나, 필요에 따라 추가로 지급한다.
     const submitGrant = async (overrideLimit: boolean) => {
         try {
             setIsSubmittingGrant(true);
@@ -252,8 +245,7 @@ export default function MakeupCenterPage() {
             });
             fetchCounts();
         } catch (error: any) {
-            // 🎯 [보강권 전체 정책] 최대 보유 개수/월 발급 제한을 초과하면 alert 대신 "그래도 지급하시겠습니까?"
-            // 확인을 띄운다 — 원장/강사 전용 화면이라 학부모가 볼 일은 없다.
+            // 정책 한도 초과 시 alert 대신 강제 지급 여부를 확인한다.
             if (error.response?.status === 409 && error.response?.data?.limitExceeded) {
                 setIsSubmittingGrant(false);
                 if (confirm(`${error.response.data.message}\n\n그래도 지급하시겠습니까?`)) {
@@ -438,7 +430,7 @@ export default function MakeupCenterPage() {
                                                     )}
                                                 </td>
                                                 <td className="p-4 text-center">
-                                                    {/* 🎯 잔여 0개여도 사용/만료된 이력은 남아있을 수 있으므로 항상 클릭해서 이력을 볼 수 있게 한다. */}
+                                                    {/* 잔여 0개여도 사용/만료 이력은 남아있을 수 있어 항상 클릭 가능 */}
                                                     <button
                                                         type="button"
                                                         onClick={() => handleToggleDetail(c.studentUuid)}

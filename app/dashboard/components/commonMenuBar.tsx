@@ -4,14 +4,13 @@ import { useEffect, useState, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import axios from 'axios';
 
-// 대기 인원 계산을 위한 회원 객체 타입 명세
 interface MemberData {
     uuid: string;
     isApproved: boolean;
 }
 
 interface CommonMenuBarProps {
-    children: ReactNode; // 각 페이지의 알맹이 본문 내용이 이 자리로 전달됩니다.
+    children: ReactNode;
 }
 
 export default function CommonMenuBar({ children }: CommonMenuBarProps) {
@@ -22,18 +21,15 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // ⏳ 가입 승인 대기 카운트 상태값
     const [pendingTeacherCount, setPendingTeacherCount] = useState<number>(0);
     const [pendingStudentCount, setPendingStudentCount] = useState<number>(0);
-    // ⏳ 보강 신청 대기 카운트 (원장/강사 전용)
     const [pendingMakeupRequestCount, setPendingMakeupRequestCount] = useState<number>(0);
 
     useEffect(() => {
         const name = sessionStorage.getItem('userName');
         const role = sessionStorage.getItem('userRole');
 
-        // 🚨 accessToken은 httpOnly 쿠키로만 존재하므로 JS에서는 값을 확인할 수 없다.
-        // 여기서는 UI 표시용 정보만 확인하고, 실제 인증 여부는 각 API 호출이 401/403을 받으면
+        // sessionStorage 값은 UI 표시용일 뿐 — 실제 인증 여부는 API가 401/403을 반환하면
         // AxiosInterceptorProvider가 감지해 로그인 페이지로 돌려보낸다.
         if (!name || !role) {
             router.push('/');
@@ -44,7 +40,6 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
         setUserRole(role);
         setIsLoading(false);
 
-        // 권한별 대기자 카운트 세팅
         if (role === 'ADMIN') {
             fetchPendingTeachersCount();
             fetchPendingStudentsCount(role);
@@ -55,9 +50,8 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
         if (role === 'ADMIN' || role === 'TEACHER') {
             fetchPendingMakeupRequestCount();
         }
-    }, [router, pathname]); // 페이지를 이동할 때마다 메뉴바의 배지 숫자가 자동으로 갱신됩니다.
+    }, [router, pathname]); // pathname 변경마다 배지 숫자를 다시 조회
 
-    // 🔄 백엔드 강사 목록 API 호출 및 대기자 카운트 연산
     const fetchPendingTeachersCount = async () => {
         try {
             const academyId = sessionStorage.getItem('academyId');
@@ -71,17 +65,14 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
         }
     };
 
-    // 🔄 백엔드 수강생 목록 API 호출 (🚨 보안 원칙에 맞춘 UUID 식별자 기반 필터링 완벽 싱크 적용)
     const fetchPendingStudentsCount = async (role: string) => {
         try {
             const academyId = sessionStorage.getItem('academyId');
-
-            // 🚨 [수정] 외부 식별자 원칙에 맞게 userUuid를 스토리지에서 꺼내옵니다.
             const teacherUuid = sessionStorage.getItem('userUuid');
 
             let url = `http://localhost:8080/api/members/students?academyId=${academyId}`;
 
-            // 🚨 [수정] 강사 로그인 상태이고 UUID 식별자가 안전하게 존재할 때만 teacherUuid 파라미터 결합
+            // 강사는 본인 담당 수강생만 카운트
             if (role === 'TEACHER' && teacherUuid && teacherUuid.trim() !== '') {
                 url += `&teacherUuid=${teacherUuid}`;
             }
@@ -95,7 +86,6 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
         }
     };
 
-    // 🔄 보강 매칭 센터 메뉴 배지용: 대기 중인 보강 신청 개수
     const fetchPendingMakeupRequestCount = async () => {
         try {
             const academyId = sessionStorage.getItem('academyId');
@@ -108,8 +98,7 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
 
     const handleLogout = async () => {
         try {
-            // 쿠키(httpOnly access_token)를 함께 보내야 서버가 어떤 토큰을 만료시킬지 알 수 있고,
-            // 로그아웃 응답의 Set-Cookie로 만료된 쿠키를 내려받아야 브라우저에서 실제로 삭제된다.
+            // credentials 포함해야 서버가 만료시킬 토큰을 식별하고 Set-Cookie로 삭제해준다.
             await fetch('http://localhost:8080/api/members/logout', {
                 method: 'POST',
                 credentials: 'include',
@@ -138,7 +127,6 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
         return allowedRoles.includes(userRole);
     };
 
-    // 현재 활성화된 메뉴 하이라이트 스타일 유틸
     const getMenuClass = (targetPath: string) => {
         const baseClass = "w-full flex items-center justify-between px-4 py-3 text-sm font-semibold rounded-md transition text-left ";
         return pathname === targetPath
@@ -242,7 +230,6 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
 
     return (
         <div className="min-h-screen bg-paper flex w-full">
-            {/* 💻 PC 레이아웃 사이드바 */}
             <aside className="hidden sm:flex flex-col justify-between w-64 bg-paper-raised border-r border-line h-screen sticky top-0 p-6">
                 <div className="space-y-6">
                     <h2 onClick={() => router.push('/dashboard')} className="font-display text-xl text-accent tracking-tight px-4 cursor-pointer">ReschEdu</h2>
@@ -260,7 +247,6 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
                 </div>
             </aside>
 
-            {/* 📱 모바일 메뉴 서랍 레이아웃 */}
             {isMobileMenuOpen && (
                 <div className="sm:hidden fixed inset-0 z-50 bg-paper-raised w-full h-full p-6 flex flex-col justify-between animate-fade-in">
                     <div className="space-y-6">
@@ -285,7 +271,6 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
                 </div>
             )}
 
-            {/* 메인 우측 콘텐츠 영역 외부 박스 */}
             <div className="flex-1 flex flex-col min-w-0">
                 <header className="bg-paper-raised border-b border-line px-4 sm:px-6 h-16 flex justify-between items-center sticky top-0 z-40">
                     <div className="flex items-center gap-3.5 h-full">
@@ -307,7 +292,6 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
                     </div>
                 </header>
 
-                {/* 💡 개별 페이지들의 알맹이 코드가 이 아래 자리에 정갈하게 렌더링됩니다. */}
                 <div className="flex-1 w-full overflow-y-auto">
                     {children}
                 </div>

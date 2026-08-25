@@ -8,10 +8,10 @@ const DAY_LABELS: Record<string, string> = {
     MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목',
     FRIDAY: '금', SATURDAY: '토', SUNDAY: '일',
 };
-// 그리드 화면은 regular-classes 페이지와 동일하게 월~토까지만 표시한다.
+// 그리드는 월~토까지만 표시(일요일 제외)
 const GRID_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
 
-// 🎨 시간표 블록 색상 팔레트 (regular-classes 페이지와 동일 — uuid 해시로 항상 같은 색 배정)
+// uuid 해시로 수업마다 항상 같은 색 배정
 const BLOCK_COLORS = [
     'bg-cat-1', 'bg-cat-2', 'bg-cat-3', 'bg-cat-4', 'bg-cat-5', 'bg-cat-6',
 ];
@@ -31,8 +31,6 @@ function toMinutes(hhmm: string) {
 }
 
 const HOUR_HEIGHT = 64; // px
-
-// ─── 날짜 유틸 (주간 네비게이션용, regular-classes 페이지와 동일한 방식) ──────────
 
 function formatDateISO(d: Date): string {
     const y = d.getFullYear();
@@ -94,8 +92,7 @@ const TICKET_STATUS_LABELS: Record<MakeupTicketDetail['status'], { label: string
 interface MakeupSlot {
     regularClassUuid: string;
     title: string | null;
-    // 🎯 [권한별 표시 차등화] 학부모 화면에서는 강사명을 노출하지 않으므로 서버가 항상 null로 내려준다.
-    teacherName: string | null;
+    teacherName: string | null; // 학부모 화면에서는 서버가 항상 null로 내려준다(강사명 비노출)
     roomNumber: string | null;
     date: string;
     dayOfWeek: string;
@@ -110,8 +107,7 @@ interface MakeupRequestItem {
     uuid: string;
     studentUuid: string;
     studentName: string;
-    // 🎯 원장/강사가 수동 지급한 보강권을 사용한 신청은 특정 수업/날짜에 묶여 있지 않으므로 null일 수 있다.
-    originClassUuid: string | null;
+    originClassUuid: string | null; // 수동 지급 보강권을 사용한 신청은 원래 수업이 없어 null 가능
     originClassTitle: string | null;
     absentDate: string | null;
     targetRegularClassUuid: string;
@@ -143,10 +139,8 @@ export default function MakeupApplyPage() {
     const [slots, setSlots] = useState<MakeupSlot[]>([]);
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
 
-    // 🎯 자녀별 잔여 보강권 개수 — 보강 신청 가능 여부와 선택지를 이 데이터로만 결정한다
-    // (보강권이 없는 자녀는 신청 자체가 불가능해야 하므로 이름만 있는 목록으로는 부족하다).
+    // 신청 가능 여부/선택지는 이 잔여 보강권 데이터로만 결정한다(0개인 자녀는 신청 불가).
     const [childTicketCounts, setChildTicketCounts] = useState<StudentTicketCount[]>([]);
-    // 🎫 자녀별 보강권 이력(사유+기간, 미사용/사용/만료 전체) — 클릭한 자녀만 펼쳐서 보여준다.
     const [expandedChildUuid, setExpandedChildUuid] = useState<string | null>(null);
     const [ticketHistoryByChild, setTicketHistoryByChild] = useState<Record<string, MakeupTicketDetail[]>>({});
     const [isLoadingTicketHistory, setIsLoadingTicketHistory] = useState<string | null>(null);
@@ -157,13 +151,11 @@ export default function MakeupApplyPage() {
     const [selectedChildUuid, setSelectedChildUuid] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // 🎯 [다학원 자녀 지원] 자녀가 다니는 학원이 여러 곳일 수 있으므로, 보강 신청은 "지금 보고 있는 학원"
-    // 하나를 선택해서 그 학원 기준으로만 여석을 조회/신청한다.
+    // 자녀가 여러 학원에 다닐 수 있어, 선택된 학원 하나 기준으로만 여석을 조회/신청한다.
     const [academies, setAcademies] = useState<AcademyOption[]>([]);
     const [selectedAcademyId, setSelectedAcademyId] = useState('');
 
-    // 🎯 성능 최적화: 주간 네비게이션 연타 시 먼저 보낸 요청의 응답이 나중에 도착해 화면이 잘못된
-    // 주차로 되돌아가는 경합을 방지한다 — 가장 나중에 보낸 요청의 결과만 반영한다.
+    // 주간 네비게이션 연타 시 늦게 보낸 요청 결과만 반영해 응답 순서 역전을 방지
     const fetchSlotsRequestId = useRef(0);
 
     useEffect(() => {
@@ -186,7 +178,7 @@ export default function MakeupApplyPage() {
             if (list.length > 0) {
                 setSelectedAcademyId(String(list[0].id));
             } else {
-                // 🚨 안전망: 자녀가 등록된 학원이 하나도 없는 예외적인 경우, 기존 세션의 학원으로라도 대체한다.
+                // 자녀 등록 학원이 없는 예외 케이스는 세션의 학원으로 대체
                 setSelectedAcademyId(sessionStorage.getItem('academyId') || '');
             }
         } catch (error) {
@@ -203,8 +195,7 @@ export default function MakeupApplyPage() {
         }
     };
 
-    // 🎯 자녀 이름 칩 클릭: 이미 펼쳐져 있으면 접고, 아니면 (필요 시 조회 후) 펼친다. 만료/사용된 것도
-    // 포함한 전체 이력이라 보강권이 0개인 자녀도 눌러서 지난 이력을 볼 수 있다.
+    // 만료/사용 포함 전체 이력이라 보강권 0개인 자녀도 눌러서 지난 이력을 볼 수 있다.
     const handleToggleTicketHistory = async (studentUuid: string) => {
         if (expandedChildUuid === studentUuid) {
             setExpandedChildUuid(null);
@@ -250,8 +241,6 @@ export default function MakeupApplyPage() {
         }
     };
 
-    // 🎯 보강권이 없는 자녀는 신청 자체가 불가능해야 하므로, 실제 선택지는 잔여 보강권이 있는 자녀로만 제한한다.
-    // 자녀가 둘 이상이어도 한 명만 보강권을 보유하고 있다면 그 자녀만 선택지에 나타난다.
     const childrenWithTickets = useMemo(
         () => childTicketCounts.filter((c) => c.remainingTicketCount > 0),
         [childTicketCounts]
@@ -296,7 +285,6 @@ export default function MakeupApplyPage() {
         return formatDateISO(currentWeekStart) === formatDateISO(getMonday(new Date()));
     }, [currentWeekStart]);
 
-    // 💻 PC 그리드 뷰용 파생 데이터 (regular-classes 페이지와 동일한 방식)
     const weekDates = useMemo(() => {
         const map: Record<string, string> = {};
         GRID_DAYS.forEach((day, idx) => {
@@ -342,7 +330,6 @@ export default function MakeupApplyPage() {
                         </p>
                     </div>
 
-                    {/* 🏢 [다학원 자녀 지원] 자녀가 다니는 학원이 여러 곳이면, 어느 학원 기준으로 볼지 선택한다 */}
                     {academies.length > 1 && (
                         <div className="mb-4 flex items-center gap-2">
                             <label className="text-xs font-bold text-ink-faint">🏢 학원 선택</label>
@@ -358,8 +345,6 @@ export default function MakeupApplyPage() {
                         </div>
                     )}
 
-                    {/* 🎫 자녀별 잔여 보강권 현황 — 보강권이 없는 자녀는 신청할 수 없다는 것을 미리 알려준다.
-                        클릭하면 사유·기간이 담긴 전체 이력(만료/사용 포함)을 펼쳐볼 수 있다. */}
                     {childTicketCounts.length > 0 && (
                         <div className="mb-4 space-y-2">
                             <div className="flex flex-wrap gap-2">
@@ -437,7 +422,6 @@ export default function MakeupApplyPage() {
                         </div>
                     )}
 
-                    {/* 🎯 주간 날짜 네비게이션 */}
                     <div className="mb-4 flex items-center justify-center gap-3 bg-line-soft border border-line-soft rounded-lg py-2.5">
                         <button
                             type="button"
@@ -476,7 +460,6 @@ export default function MakeupApplyPage() {
                         </div>
                     ) : (
                         <>
-                        {/* 💻 데스크톱: 요일×시간 그리드 뷰 (regular-classes 페이지와 동일한 형식) */}
                         <div className="hidden sm:block border border-line rounded-lg overflow-x-auto">
                             <div className="flex min-w-[640px]">
                                 {/* 시간축 라벨 컬럼 */}
@@ -550,7 +533,6 @@ export default function MakeupApplyPage() {
                             </div>
                         </div>
 
-                        {/* 📱 모바일: 목록 테이블 뷰 */}
                         <div className="sm:hidden border border-line-soft rounded-lg overflow-hidden">
                         <table className="min-w-full bg-paper-raised divide-y divide-line text-sm">
                             <thead className="bg-line-soft text-ink-faint font-semibold text-xs uppercase tracking-wider text-left">
@@ -569,7 +551,6 @@ export default function MakeupApplyPage() {
                                             {slot.date.slice(5)} ({DAY_LABELS[slot.dayOfWeek]})
                                         </td>
                                         <td className="p-3">
-                                            {/* 🎯 [권한별 표시 차등화] 학부모 화면에서는 강사명을 노출하지 않고 수업명·강의실만 보여준다. */}
                                             <div className="font-bold text-ink">{slot.title || '수업'}</div>
                                             {slot.roomNumber && <div className="text-xs text-ink-faint">{slot.roomNumber}</div>}
                                         </td>
@@ -646,7 +627,6 @@ export default function MakeupApplyPage() {
                 </div>
             </main>
 
-            {/* 📝 보강 신청 모달 */}
             {applyTarget && (
                 <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
                     <div className="bg-paper-raised w-full max-w-sm rounded-lg shadow-lg my-8 animate-fade-in">
@@ -685,8 +665,6 @@ export default function MakeupApplyPage() {
                                         onChange={(e) => setSelectedChildUuid(e.target.value)}
                                         className="w-full px-3 py-2.5 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"
                                     >
-                                        {/* 🎯 보강권이 없는 자녀는 아예 선택지에 나타나지 않는다 — 자녀가 둘 이상이어도
-                                            한 명만 보강권이 있다면 그 자녀만 여기 표시된다. */}
                                         {childrenWithTickets.map((child) => (
                                             <option key={child.studentUuid} value={child.studentUuid}>
                                                 {child.managementName || child.name} (보강권 {child.remainingTicketCount}개)

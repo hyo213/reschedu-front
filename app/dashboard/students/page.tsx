@@ -11,26 +11,25 @@ interface ScheduleSummary {
 }
 
 interface StudentMember {
-    uuid: string;         // 수강생(Student)의 고유 고유 식별자 UUID
-    name: string;         // 학생 본명
-    managementName: string; // 원 내에서 식별하기 위한 관리용 이름
-    birthDate: string;    // 생년월일
-    gender: string;       // 성별 (MALE / FEMALE)
-    phone: string;        // 학생 본인 연락처
-    parentPhone: string;  // 학부모(Member)의 공통 연락처 (phone 필드 매핑)
+    uuid: string;
+    name: string;
+    managementName: string; // 동명이인 구분용 관리 이름
+    birthDate: string;
+    gender: string;        // MALE / FEMALE
+    phone: string;
+    parentPhone: string;
     shuttlePickupLocation: string;
     shuttleDropoffLocation: string;
-    isApproved: boolean;  // 🚨 계정(학부모)의 승인 상태와 원생 등록 매핑 상태 결합
-    // 🎯 수강 기간(수강료 납부 기간) — 이 화면에서 직접 관리
+    isApproved: boolean;   // 학부모 계정 승인 상태
     enrollmentStartDate: string | null;
-    enrollmentEndDate: string | null;
+    enrollmentEndDate: string | null; // 수강료 납부 완료일
     paidForUpcomingMonth: boolean;
     expired: boolean;
-    // 🎯 오늘 기준 활성 반 배정 요약 (예: 월3수4금5 형태로 압축 표시)
-    schedules: ScheduleSummary[];
-    // 🎯 주당 희망 수강 횟수 — schedules(실제 배정 개수)와 다를 수 있어 목록에서 바로 비교할 수 있게 노출
-    weeklyFrequency: number | null;
+    schedules: ScheduleSummary[]; // 활성 반 배정 요약
+    weeklyFrequency: number | null; // 희망 주당 횟수 (schedules.length와 다를 수 있음)
 }
+
+const API_BASE = 'http://localhost:8080/api';
 
 const DAY_LABELS: Record<string, string> = {
     MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목',
@@ -38,14 +37,14 @@ const DAY_LABELS: Record<string, string> = {
 };
 const DAY_ORDER = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 
-// 24시간제 시각을 학원에서 흔히 쓰는 표현("오후 3시" → "3")으로 압축한다.
+// 24시간제 → "오후 3시" 형태를 "3"으로 압축
 function formatHour(startTime: string): string {
     const hour = parseInt(startTime.slice(0, 2), 10);
     const compact = hour % 12 === 0 ? 12 : hour % 12;
     return String(compact);
 }
 
-// 학생의 활성 반 배정들을 요일 순서로 펼쳐 "월3수4금5" 형태의 압축 문자열로 만든다.
+// 활성 반 배정을 요일순 "월3수4금5" 형태로 압축
 function formatScheduleSummary(schedules: ScheduleSummary[]): string {
     if (!schedules || schedules.length === 0) return '미배정';
 
@@ -53,7 +52,7 @@ function formatScheduleSummary(schedules: ScheduleSummary[]): string {
     return sorted.map((s) => `${DAY_LABELS[s.dayOfWeek] || s.dayOfWeek}${formatHour(s.startTime)}`).join('');
 }
 
-// 🎯 희망 주당 횟수(weeklyFrequency)와 실제 배정된 반 개수(schedules.length)가 다르면 눈에 띄게 표시한다.
+// 희망 횟수와 실배정 개수가 다르면 mismatch 표시
 function formatWeeklyFrequencyBadge(student: StudentMember): { label: string; mismatch: boolean } | null {
     if (student.weeklyFrequency == null) return null;
     const assignedCount = student.schedules?.length || 0;
@@ -78,12 +77,25 @@ function getPaymentBadge(student: StudentMember): PaymentBadge {
     return { label: '결제완료', className: 'bg-success-soft text-success' };
 }
 
+function calculateAge(birthDateString: string) {
+    if (!birthDateString) return '-';
+    const birthYear = new Date(birthDateString).getFullYear();
+    const currentYear = new Date().getFullYear();
+    return `${currentYear - birthYear + 1}세`;
+}
+
+function getGenderLabel(gender: string) {
+    if (gender === 'MALE') return '남';
+    if (gender === 'FEMALE') return '여';
+    return '-';
+}
+
 interface TeacherOption {
     uuid: string;
     name: string;
 }
 
-// 🎯 원장/강사가 수강생을 오프라인 회원가입 절차 없이 즉시 승인 완료 상태로 등록하는 폼의 초기값
+// 오프라인 등록 폼 초기값 — 등록 즉시 승인 완료 상태로 생성됨
 const initialManualForm = {
     parentName: '',
     parentPhone: '',
@@ -118,7 +130,7 @@ export default function StudentsManagementPage() {
     // 🎯 미결제(+수강기간 만료) 학생만 보기 필터
     const [showUnpaidOnly, setShowUnpaidOnly] = useState(false);
 
-    // 🎯 수강 기간(수강료 납부 기간) 등록/연장 모달
+    // 수강 기간(수강료 납부 기간) 등록/연장 모달
     const [periodTarget, setPeriodTarget] = useState<StudentMember | null>(null);
     const [periodForm, setPeriodForm] = useState({ enrollmentStartDate: '', enrollmentEndDate: '' });
     const [isSubmittingPeriod, setIsSubmittingPeriod] = useState(false);
@@ -140,29 +152,27 @@ export default function StudentsManagementPage() {
             const role = sessionStorage.getItem('userRole');
             const teacherUuid = sessionStorage.getItem('userUuid');
 
-            let url = `http://localhost:8080/api/members/students?academyId=${academyId}`;
+            let url = `${API_BASE}/members/students?academyId=${academyId}`;
 
             if (role === 'TEACHER' && teacherUuid && teacherUuid.trim() !== '') {
                 url += `&teacherUuid=${teacherUuid}`;
             }
 
             const response = await axios.get(url);
-
-            // 백엔드 StudentListResponse의 필드 구조를 프론트 뷰 규격에 완벽 바인딩
             setStudentsList(response.data);
         } catch (error: any) {
-            console.error('수강ens 리스트 패치 오류:', error);
+            console.error('수강생 리스트 조회 오류:', error);
         } finally {
             setIsFetchingData(false);
         }
     };
 
-    // 🔄 원장 전용: 담당 강사 배정 셀렉트박스를 채우기 위한 강사 목록 조회
+    // 원장 전용: 담당 강사 배정 셀렉트박스용 강사 목록
     const fetchTeachersOptions = async () => {
         try {
             const academyId = sessionStorage.getItem('academyId');
 
-            const response = await axios.get(`http://localhost:8080/api/members/teachers?academyId=${academyId}`);
+            const response = await axios.get(`${API_BASE}/members/teachers?academyId=${academyId}`);
 
             setTeachersOptions(response.data || []);
         } catch (error) {
@@ -181,7 +191,7 @@ export default function StudentsManagementPage() {
         setManualForm((prev) => ({ ...prev, [field]: value }));
     };
 
-    // 🎯 [핵심 신규 기능] 수강생 수동 등록: 별도 가입 승인 절차 없이 등록 즉시 승인 완료 상태로 생성됨
+    // 별도 가입 승인 절차 없이 등록 즉시 승인 완료 상태로 생성
     const handleManualRegisterSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -208,7 +218,7 @@ export default function StudentsManagementPage() {
                 enrollmentEndDate: manualForm.enrollmentEndDate || null,
             };
 
-            await axios.post(`http://localhost:8080/api/members/students/manual?academyId=${academyId}`, requestBody);
+            await axios.post(`${API_BASE}/members/students/manual?academyId=${academyId}`, requestBody);
 
             alert('수강생이 승인 완료 상태로 등록되었습니다.');
             setIsAddModalOpen(false);
@@ -226,16 +236,15 @@ export default function StudentsManagementPage() {
         if (!confirm('해당 수강생(및 보호자 계정)의 가입을 승인하시겠습니까?')) return;
 
         try {
-            // 🚨 백엔드 MemberController의 @PatchMapping("/{uuid}/approve") 주소와 바인딩
-            await axios.patch(`http://localhost:8080/api/members/${targetUuid}/approve`, {});
+            await axios.patch(`${API_BASE}/members/${targetUuid}/approve`, {});
             alert('승인이 완료되었습니다.');
-            fetchStudents(); // 목록 새로고침
+            fetchStudents();
         } catch (error) {
             alert('승인 처리 중 오류가 발생했습니다.');
         }
     };
 
-    // ─── 수강 기간(수강료 납부 기간) 관리 ────────────────────────────────────
+    // ─── 수강 기간(수강료 납부 기간) 관리 ───
 
     const openPeriodModal = (student: StudentMember) => {
         setPeriodForm({
@@ -253,7 +262,7 @@ export default function StudentsManagementPage() {
             setIsSubmittingPeriod(true);
             const academyId = sessionStorage.getItem('academyId');
             await axios.patch(
-                `http://localhost:8080/api/members/students/${periodTarget.uuid}/enrollment-period?academyId=${academyId}`,
+                `${API_BASE}/members/students/${periodTarget.uuid}/enrollment-period?academyId=${academyId}`,
                 {
                     enrollmentStartDate: periodForm.enrollmentStartDate || null,
                     enrollmentEndDate: periodForm.enrollmentEndDate || null,
@@ -270,13 +279,13 @@ export default function StudentsManagementPage() {
         }
     };
 
-    // 🎯 [미결제] 뱃지 원클릭 연장: 확인 후 "다음 달 말일"까지 수강 종료일을 자동으로 늘린다.
+    // [미결제] 뱃지 클릭 시 종료일을 "다음 달 말일"까지 연장
     const handleQuickExtend = async (student: StudentMember) => {
         if (!confirm('수강기간을 연장하시겠습니까?')) return;
 
-        const today = new Date();
-        // new Date(y, m+2, 0) === "m+1월(0-indexed)의 0일" === 다음 달의 마지막 날
-        const nextMonthEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+        const now = new Date();
+        // new Date(y, m+2, 0) === 다음 달의 마지막 날
+        const nextMonthEnd = new Date(now.getFullYear(), now.getMonth() + 2, 0);
         const newEndDate = [
             nextMonthEnd.getFullYear(),
             String(nextMonthEnd.getMonth() + 1).padStart(2, '0'),
@@ -286,7 +295,7 @@ export default function StudentsManagementPage() {
         try {
             const academyId = sessionStorage.getItem('academyId');
             await axios.patch(
-                `http://localhost:8080/api/members/students/${student.uuid}/enrollment-period?academyId=${academyId}`,
+                `${API_BASE}/members/students/${student.uuid}/enrollment-period?academyId=${academyId}`,
                 {
                     enrollmentStartDate: student.enrollmentStartDate || null,
                     enrollmentEndDate: newEndDate,
@@ -300,21 +309,7 @@ export default function StudentsManagementPage() {
         }
     };
 
-    const calculateAge = (birthDateString: string) => {
-        if (!birthDateString) return '-';
-        const birthYear = new Date(birthDateString).getFullYear();
-        const currentYear = new Date().getFullYear();
-        return `${currentYear - birthYear + 1}세`;
-    };
-
-    const getGenderLabel = (gender: string) => {
-        if (gender === 'MALE') return '남';
-        if (gender === 'FEMALE') return '여';
-        return '-';
-    };
-
-    // 미결제(수강기간 만료 포함)만 필터링. 기간이 아예 설정되지 않은 학생은 추적 대상이 아니므로 제외한다.
-    // 🎯 수강기간이 만료된 학생은 화면 맨 아래로 자동 정렬한다(그 외 학생들의 상대 순서는 그대로 유지 — stable sort).
+    // 미결제(만료 포함) 필터링, 만료된 학생은 목록 맨 아래로 정렬
     const displayedStudents = useMemo(() => {
         const base = showUnpaidOnly
             ? studentsList.filter((s) => s.enrollmentEndDate && !s.paidForUpcomingMonth)
@@ -369,7 +364,7 @@ export default function StudentsManagementPage() {
                         </div>
                     </div>
 
-                    {/* 데스크톱 대형 뷰포트 테이블 테이블 테이블 */}
+                    {/* 데스크톱 테이블 뷰 */}
                     <div className="hidden sm:block border border-line-soft rounded-lg overflow-x-auto">
                         <table className="min-w-full bg-paper-raised divide-y divide-line text-sm whitespace-nowrap">
                             <thead className="bg-line-soft text-ink-faint font-semibold text-xs uppercase tracking-wider text-left">
@@ -403,7 +398,7 @@ export default function StudentsManagementPage() {
                                         >
                                             <td
                                                 onClick={(e) => {
-                                                    if (student.expired) return; // 만료 행은 상세 이동 대신 행 클릭으로 기간 관리 모달이 열린다
+                                                    if (student.expired) return; // 만료 행은 상세 이동 대신 기간 관리 모달로
                                                     e.stopPropagation();
                                                     router.push(`/dashboard/students/detail/${student.uuid}`);
                                                 }}
@@ -411,12 +406,11 @@ export default function StudentsManagementPage() {
                                             >
                                                 {student.managementName || student.name}
                                                 {student.managementName && student.managementName !== student.name && (
-                                                    <span className={`text-xs font-normal ml-1 ${student.expired ? 'text-ink-faint' : 'text-ink-faint'}`}>({student.name})</span>
+                                                    <span className="text-xs font-normal ml-1 text-ink-faint">({student.name})</span>
                                                 )}
                                             </td>
                                             <td className="p-4 text-center font-medium">{getGenderLabel(student.gender)}</td>
                                             <td className="p-4 text-center font-medium">{calculateAge(student.birthDate)}</td>
-                                            {/* 🚨 교정: parentPhone 혹은 phone 필드가 유연하게 연동되도록 안전 가드 처리 */}
                                             <td className="p-4 font-medium">{student.parentPhone || student.phone || '-'}</td>
                                             <td className="p-4 font-semibold">
                                                 {formatScheduleSummary(student.schedules)}
@@ -491,7 +485,7 @@ export default function StudentsManagementPage() {
                         </table>
                     </div>
 
-                    {/* 모바일 장치 대응을 위한 모바일 모바일 뷰 */}
+                    {/* 모바일 카드 뷰 */}
                     <div className="block sm:hidden space-y-3.5">
                         {displayedStudents.length === 0 ? (
                             <div className="p-8 text-center text-ink-faint font-medium border border-line-soft rounded-lg bg-line-soft/50">
@@ -598,7 +592,7 @@ export default function StudentsManagementPage() {
 
                 </div>
 
-                {/* 🎯 수강생 수동 등록 모달: 별도 가입 승인 절차 없이 등록 즉시 '승인 완료' 상태로 생성된다 */}
+                {/* 수강생 수동 등록 모달 */}
                 {isAddModalOpen && (
                     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
                         <div className="bg-paper-raised w-full max-w-2xl rounded-lg shadow-lg my-8 animate-fade-in">
@@ -851,7 +845,7 @@ export default function StudentsManagementPage() {
                     </div>
                 )}
 
-                {/* 🎯 수강 기간(수강료 납부 기간) 등록/연장 모달 */}
+                {/* 수강 기간 등록/연장 모달 */}
                 {periodTarget && (
                     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
                         <div className="bg-paper-raised w-full max-w-sm rounded-lg shadow-lg my-8 animate-fade-in">

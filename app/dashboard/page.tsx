@@ -34,20 +34,17 @@ export default function DashboardPage() {
     const router = useRouter();
     const [myRole, setMyRole] = useState<string>('');
 
-    // 🔔 수강생/강사 가입 승인 대기 알림 카운트
     const [pendingStudentCount, setPendingStudentCount] = useState<number>(0);
     const [pendingTeacherCount, setPendingTeacherCount] = useState<number>(0);
     const [isLoadingAlerts, setIsLoadingAlerts] = useState(false);
 
-    // 📢 현재 노출 중인 공지사항 (최신순, 최대 3건 미리보기)
+    // 최신순 최대 3건만 미리보기로 노출
     const [recentNotices, setRecentNotices] = useState<NoticeSummary[]>([]);
 
-    // 📅 다음 수업 (현재 시각 기준으로 가장 가까운 다가오는 시간표)
     const [nextClass, setNextClass] = useState<NextClassItem | null>(null);
     const [isLoadingNextClass, setIsLoadingNextClass] = useState(false);
 
     useEffect(() => {
-        // 세션스토리지에서 로그인 유저의 권한만 확인
         const role = sessionStorage.getItem('userRole') || '';
         setMyRole(role);
 
@@ -58,8 +55,7 @@ export default function DashboardPage() {
         fetchRecentNotices(role);
     }, []);
 
-    // 🔄 현재 노출 중인 공지사항 최신 3건 조회.
-    // 🎯 [다학원 자녀 지원] 학부모는 자녀가 다니는 모든 학원의 공지를 통합해서 최신순으로 받아온다.
+    // 학부모는 자녀가 다니는 모든 학원의 공지를 통합해서 받아온다.
     const fetchRecentNotices = async (role: string) => {
         try {
             const url = role === 'PARENT'
@@ -72,7 +68,6 @@ export default function DashboardPage() {
         }
     };
 
-    // 🔄 현재 시각 기준 가장 가까운 다가오는 시간표 조회
     const fetchNextClass = async (role: string) => {
         setIsLoadingNextClass(true);
         try {
@@ -98,7 +93,7 @@ export default function DashboardPage() {
         }
     };
 
-    // 🔄 원장/강사 전용: 승인 대기 중인 수강생(및 원장은 강사까지) 카운트 조회
+    // 원장은 수강생+강사, 강사는 본인 담당 수강생만 승인 대기 카운트 조회
     const fetchPendingApprovals = async (role: string) => {
         setIsLoadingAlerts(true);
         try {
@@ -135,7 +130,6 @@ export default function DashboardPage() {
         <CommonMenuBar>
             <main className="p-6 max-w-7xl w-full mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
 
-                {/* 📅 카드 1: 다음 수업 일정 정보 (현재 시각 기준 가장 가까운 다가오는 시간표) */}
                 <div className="bg-paper-raised p-6 rounded-lg border border-line shadow-sm flex flex-col justify-between">
                     <div>
                         <h3 className="text-lg font-bold text-ink mb-2">📅 다음 수업</h3>
@@ -189,7 +183,6 @@ export default function DashboardPage() {
                     </button>
                 </div>
 
-                {/* 📥 카드 2: 원내 명부 / 신청 Center */}
                 <div className="bg-paper-raised p-6 rounded-lg border border-line shadow-sm flex flex-col justify-between">
                     <div>
                         <h3 className="text-lg font-bold text-ink mb-2">💼 원내 명부 / 신청 Center</h3>
@@ -226,7 +219,6 @@ export default function DashboardPage() {
                     </button>
                 </div>
 
-                {/* 🔔 카드 3: 시스템 공지 및 알림 */}
                 <div className="bg-paper-raised p-6 rounded-lg border border-line shadow-sm flex flex-col justify-between">
                     <div>
                         <h3 className="text-lg font-bold text-ink mb-2">🔔 주요 알림</h3>

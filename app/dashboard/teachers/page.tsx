@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import CommonMenuBar from '../components/commonMenuBar'; // 🚨 정해진 상대 경로 매핑
+import CommonMenuBar from '../components/commonMenuBar';
 
 interface TeacherMember {
     uuid: string;
@@ -20,7 +20,6 @@ export default function TeachersManagementPage() {
         fetchTeachers();
     }, []);
 
-    // 🔄 백엔드로부터 소속 학원의 모든 강사 리스트를 가져오는 API 호출
     const fetchTeachers = async () => {
         setIsFetchingData(true);
         try {
@@ -39,14 +38,13 @@ export default function TeachersManagementPage() {
         }
     };
 
-    // 🎯 [가입 승인] 버튼 동작 로직
     const handleApproveTeacher = async (targetUuid: string) => {
         if (!confirm('해당 선생님의 학원 가입을 승인하시겠습니까?')) return;
 
         try {
             await axios.patch(`http://localhost:8080/api/members/${targetUuid}/approve`, {});
             alert('승인이 완료되었습니다.');
-            fetchTeachers(); // 승인 완료 후 리스트 동기화 (메뉴바 배지도 자동 갱신됨)
+            fetchTeachers(); // 메뉴바 배지 갱신을 위해 리스트 재조회
         } catch (error) {
             alert('승인 처리 중 오류가 발생했습니다.');
         }
@@ -54,11 +52,8 @@ export default function TeachersManagementPage() {
 
     return (
         <CommonMenuBar>
-            {/* 💡 공통 메뉴바 내부로 강사 관리 본문 영역만 깔끔하게 진입 */}
             <main className="p-4 sm:p-6 max-w-7xl w-full mx-auto space-y-6">
                 <div className="bg-paper-raised p-4 sm:p-6 rounded-lg border border-line shadow-sm">
-
-                    {/* 상단 타이틀 영역 */}
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                         <div className="space-y-1">
                             <h3 className="text-base sm:text-lg font-bold text-ink flex items-center gap-2">
@@ -78,7 +73,6 @@ export default function TeachersManagementPage() {
                         </button>
                     </div>
 
-                    {/* 💻 PC 전용 가로형 테이블 레이아웃 */}
                     <div className="hidden sm:block border border-line-soft rounded-lg overflow-x-auto">
                         <table className="min-w-full bg-paper-raised divide-y divide-line text-sm">
                             <thead className="bg-line-soft text-ink-faint font-semibold text-xs uppercase tracking-wider text-left">
@@ -125,7 +119,6 @@ export default function TeachersManagementPage() {
                         </table>
                     </div>
 
-                    {/* 📱 모바일 전용 세로형 카드 레이아웃 */}
                     <div className="block sm:hidden space-y-3.5">
                         {teachersList.length === 0 ? (
                             <div className="p-8 text-center text-ink-faint font-medium border border-line-soft rounded-lg bg-line-soft/50">

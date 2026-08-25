@@ -8,17 +8,16 @@ const DAY_LABELS: Record<string, string> = {
     MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목',
     FRIDAY: '금', SATURDAY: '토', SUNDAY: '일',
 };
-// 요일 선택 폼에서는 일요일까지 고를 수 있게 두되, 그리드 화면 자체는 요구사항대로 월~금/토만 표시한다.
+// 폼 선택지는 일~토, 그리드 표시는 월~토만
 const ALL_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const GRID_DAYS = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
 
-// 🎨 상태색(성공/경고/위험/강조)과 겹치지 않는 전용 카테고리 팔레트 — 시간표 블록을
-// uuid 해시로 구분하는 용도이므로, 우연히 "위험/경고"처럼 읽히지 않게 한색 계열만 쓴다.
+// 상태색과 겹치지 않는 블록 전용 팔레트
 const BLOCK_COLORS = [
     'bg-cat-1', 'bg-cat-2', 'bg-cat-3', 'bg-cat-4', 'bg-cat-5', 'bg-cat-6',
 ];
 
-// 시간표 uuid를 해시해 항상 같은 색을 배정한다 (렌더링마다 색이 바뀌지 않도록).
+// uuid 해시로 항상 같은 블록 색을 배정
 function colorForClass(uuid: string) {
     let hash = 0;
     for (let i = 0; i < uuid.length; i++) {
@@ -33,7 +32,7 @@ function toMinutes(hhmm: string) {
     return h * 60 + (m || 0);
 }
 
-// ─── 날짜 유틸 (주간 네비게이션용) ──────────────────────────────────────────
+// ─── 날짜 유틸 ────────────────────────────────────────────────────────────
 
 function formatDateISO(d: Date): string {
     const y = d.getFullYear();
@@ -62,7 +61,7 @@ function formatDateLabel(d: Date): string {
     return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}(${dow})`;
 }
 
-// ISO 날짜 문자열(YYYY-MM-DD)은 문자열 비교로도 시간 순서가 유지된다.
+// YYYY-MM-DD 문자열은 사전순 비교로도 날짜 순서가 유지된다
 function isEnrollmentActiveOn(student: { enrollmentStartDate: string | null; enrollmentEndDate: string | null }, date: string): boolean {
     if (student.enrollmentStartDate && date < student.enrollmentStartDate) return false;
     if (student.enrollmentEndDate && date > student.enrollmentEndDate) return false;
@@ -75,10 +74,10 @@ interface RosterStudent {
     uuid: string;
     name: string;
     managementName: string;
-    // 수강 기간(수강료 납부 기간) — [수강생 관리] 화면에서 관리, 여기서는 표시/필터링 참고용
+    // 수강 기간(표시/필터링용, 관리는 [수강생 관리] 화면)
     enrollmentStartDate: string | null;
     enrollmentEndDate: string | null;
-    // 원래 정규 편성이 아니라 보강 매칭으로 이 회차에 들어온 수강생인지 여부
+    // 정규 편성이 아닌 보강 매칭으로 들어온 수강생인지 여부
     viaMakeup: boolean;
 }
 
@@ -91,20 +90,18 @@ interface TimeSlot {
 interface WeeklyOccurrence {
     date: string;
     dayOfWeek: string;
-    // 🎯 이 회차(RegularClassSession) 자체에 스냅샷된 시각 — 요일마다 시간이 다를 수 있으므로
-    // 블록을 그릴 때는 반드시 이 값을 써야 한다(반 템플릿의 timeSlots를 다시 찾아 추정하면 안 된다).
+    // 회차별 스냅샷 시각 — 블록 렌더링에 항상 이 값을 사용 (템플릿 timeSlots로 추정 금지)
     startTime: string;
     endTime: string;
     holidayCancelled: boolean;
-    // 🎯 그 날짜의 실제 회차(RegularClassSession) 정원 스냅샷 — 템플릿 정원과 다를 수 있다.
+    // 회차별 정원 스냅샷 (템플릿 정원과 다를 수 있음)
     maxCapacity: number;
-    // 서버가 이미 결석 처리된 학생을 제외하고 계산해 준, 실제로 참여하는 수강생 명단
-    // (학부모 조회 시에는 서버가 본인 자녀로만 제한해 응답한다 — 타 수강생 정보 노출 방지)
+    // 결석 제외 후 실제 참여 명단 (학부모 조회 시 본인 자녀로만 제한됨)
     attendingStudents: RosterStudent[];
     absentCount: number;
-    // 🎯 결석 처리된 수강생의 식별 정보 — 원장/강사 조회 시에만 채워진다(학부모에게는 항상 빈 배열).
+    // 결석 명단 — 원장/강사 조회 시만 채워짐
     absentStudents: RosterStudent[];
-    // 🎯 결석 처리된 수강생 중 "본인 자녀"만 — 학부모 조회 시에만 채워진다(원장/강사에게는 항상 빈 배열).
+    // 결석 명단 중 본인 자녀만 — 학부모 조회 시만 채워짐
     myAbsentStudents: RosterStudent[];
 }
 
@@ -117,7 +114,7 @@ interface RegularClassItem {
     academyName: string;
     maxCapacity: number;
     currentCount: number;
-    // 🎯 요일마다 서로 다른 시간대를 가질 수 있다(예: 월 15시, 수 17시, 금 20시) — 요일 순 정렬되어 온다.
+    // 요일별로 다른 시간대 가능, 요일 순 정렬되어 옴
     timeSlots: TimeSlot[];
     students: RosterStudent[];
     weeklyOccurrences: WeeklyOccurrence[];
@@ -161,7 +158,6 @@ const initialForm = {
     teacherUuid: '',
     roomNumber: '',
     maxCapacity: 10,
-    // 🎯 요일마다 서로 다른 시간대를 자유롭게 조합할 수 있다(예: 월 15시, 수 17시, 금 20시).
     timeSlots: [] as { dayOfWeek: string; startTime: string; endTime: string }[],
     studentUuids: [] as string[],
 };
@@ -173,10 +169,10 @@ export default function RegularClassesPage() {
     const [classes, setClasses] = useState<RegularClassItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    // 🗓️ 주간 네비게이션 (기본값: 이번 주)
+    // 주간 네비게이션 (기본값: 이번 주)
     const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => getMonday(new Date()));
 
-    // 👨‍🏫 원장 전용 강사별 필터
+    // 원장 전용 강사별 필터
     const [teacherFilterOptions, setTeacherFilterOptions] = useState<TeacherOption[]>([]);
     const [selectedTeacherUuid, setSelectedTeacherUuid] = useState('');
 
@@ -186,22 +182,21 @@ export default function RegularClassesPage() {
     const [teachersOptions, setTeachersOptions] = useState<TeacherOption[]>([]);
     const [studentsOptions, setStudentsOptions] = useState<StudentOption[]>([]);
     const [form, setForm] = useState(initialForm);
-    // 🎯 체크 목록을 어느 날짜 기준으로 필터링할지: 신규 등록은 오늘, 수정은 클릭한 블록의 날짜.
+    // 수강생 체크 목록 필터 기준일: 신규 등록은 오늘, 수정은 클릭한 블록의 날짜
     const [modalReferenceDate, setModalReferenceDate] = useState(() => formatDateISO(new Date()));
 
-    // 🎯 담당 강사 변경(효력일 지정) — 기존 반의 강사 필드를 즉시 덮어쓰지 않고, 지정한 날짜부터
-    // 로스터 전원을 새 강사의 같은 요일·시간 반으로 이관한다(RegularClassService.changeClassTeacher).
+    // 담당 강사 변경(효력일 지정): 지정일부터 로스터 전원을 새 강사의 같은 요일·시간 반으로 이관
     const [isChangeTeacherModalOpen, setIsChangeTeacherModalOpen] = useState(false);
     const [changeTeacherForm, setChangeTeacherForm] = useState({ newTeacherUuid: '', effectiveFrom: formatDateISO(new Date()) });
     const [isSubmittingTeacherChange, setIsSubmittingTeacherChange] = useState(false);
 
-    // 🚫 반 종료(효력일 지정) — 학생을 이관하지 않고 그 날짜부터 이 반 자체를 없앤다.
+    // 반 종료(효력일 지정): 학생 이관 없이 지정일부터 이 반 자체를 없앤다
     const [isDiscontinueModalOpen, setIsDiscontinueModalOpen] = useState(false);
     const [discontinueEffectiveFrom, setDiscontinueEffectiveFrom] = useState(formatDateISO(new Date()));
     const [isSubmittingDiscontinue, setIsSubmittingDiscontinue] = useState(false);
     const [isSubmittingDelete, setIsSubmittingDelete] = useState(false);
 
-    // 🏖️ 휴무일 관리 (원장 전용)
+    // 휴무일 관리 (원장 전용)
     const [isHolidayModalOpen, setIsHolidayModalOpen] = useState(false);
     const [holidays, setHolidays] = useState<HolidayItem[]>([]);
     const [isHolidayLoading, setIsHolidayLoading] = useState(false);
@@ -209,17 +204,17 @@ export default function RegularClassesPage() {
     const [newHolidayReason, setNewHolidayReason] = useState('');
     const [isSubmittingHoliday, setIsSubmittingHoliday] = useState(false);
 
-    // 🙋 결석 처리 (학부모: 본인 자녀만 / 원장·강사: 소속 학원 수강생 누구나)
+    // 결석 처리 (학부모: 본인 자녀만 / 원장·강사: 소속 학원 수강생 누구나)
     const [absenceTarget, setAbsenceTarget] = useState<{ cls: RegularClassItem; date: string } | null>(null);
     const [selectedChildUuid, setSelectedChildUuid] = useState('');
     const [isSubmittingAbsence, setIsSubmittingAbsence] = useState(false);
-    // 🎯 결석 신청 취소: 취소 처리 중인 학생 uuid를 추적해 버튼별로 로딩 표시를 한다.
+    // 취소 처리 중인 학생 uuid — 버튼별 로딩 표시용
     const [isCancellingAbsence, setIsCancellingAbsence] = useState<string | null>(null);
 
-    // 🎯 원장/강사가 블록을 클릭했을 때 "수정" 또는 "결석 처리" 중 하나를 고르는 액션 선택 모달
+    // 블록 클릭 시 "수정 vs 결석 처리" 선택 모달
     const [blockActionTarget, setBlockActionTarget] = useState<{ cls: RegularClassItem; date: string } | null>(null);
 
-    // 🏖️ 그리드에서 휴무 오버레이를 클릭했을 때 여는 상세(사유 수정/지정 취소) 모달 — 원장 전용
+    // 휴무 오버레이 클릭 시 상세(사유 수정/지정 취소) 모달 — 원장 전용
     const [holidayDetailTarget, setHolidayDetailTarget] = useState<HolidayItem | null>(null);
     const [editHolidayReasonInput, setEditHolidayReasonInput] = useState('');
     const [isSavingHolidayReason, setIsSavingHolidayReason] = useState(false);
@@ -227,10 +222,7 @@ export default function RegularClassesPage() {
 
     const canManage = myRole === 'ADMIN' || myRole === 'TEACHER';
 
-    // 🎯 성능 최적화: 주간 네비게이션을 빠르게 연타하면 여러 요청이 동시에 진행 중일 수 있는데,
-    // 이때 "가장 나중에 응답이 도착한" 요청이 아니라 "가장 나중에 보낸" 요청의 결과만 반영되도록
-    // 요청 세대(generation) 번호로 경합을 방지한다 — 그렇지 않으면 이전 주차 응답이 늦게 도착해
-    // 화면이 잘못된 주차 데이터로 깜빡이며 되돌아갈 수 있다.
+    // 요청 세대 번호로 경합 방지: 가장 나중에 보낸 요청의 응답만 반영 (연타 시 이전 주차로 깜빡이는 것 방지)
     const fetchClassesRequestId = useRef(0);
 
     useEffect(() => {
@@ -242,14 +234,14 @@ export default function RegularClassesPage() {
         }
     }, []);
 
-    // 🎯 휴무 사유를 그리드에서 항상 표시해야 하므로, 역할과 무관하게(원장/강사/학부모 모두) 휴무일 목록을 불러온다.
+    // 휴무 사유는 그리드에 항상 표시하므로 역할 무관하게 로드
     useEffect(() => {
         if (!myRole) return;
         fetchHolidays();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [myRole]);
 
-    // 역할이 로드된 이후, 주차/강사 필터가 바뀔 때마다 다시 조회한다.
+    // 주차/강사 필터가 바뀔 때마다 재조회
     useEffect(() => {
         if (!myRole) return;
         fetchClasses();
@@ -266,7 +258,7 @@ export default function RegularClassesPage() {
         }
     };
 
-    // 🔄 역할에 따라 조회 API가 다르다: 학부모는 본인 자녀 시간표 전용 API, 원장/강사는 학원 전체 목록 API
+    // 학부모는 본인 자녀 전용 API, 원장/강사는 학원 전체 목록 API
     const fetchClasses = async () => {
         const requestId = ++fetchClassesRequestId.current;
         setIsLoading(true);
@@ -295,11 +287,11 @@ export default function RegularClassesPage() {
         }
     };
 
-    // 원장/강사가 모달을 열 때 강사·수강생 선택지를 함께 불러온다 (신규 등록/수정 공용).
+    // 모달을 열 때 강사·수강생 선택지를 함께 불러온다 (신규 등록/수정 공용)
     const loadFormOptions = async () => {
         const academyId = sessionStorage.getItem('academyId');
         try {
-            // 🎯 강사 로그인 시에는 본인에게 배정된 수강생만 후보로 노출한다 (원장은 전체 수강생 대상).
+            // 강사는 본인 배정 수강생만, 원장은 전체 수강생
             let studentsUrl = `${API_BASE}/members/students?academyId=${academyId}`;
             if (myRole === 'TEACHER') {
                 const teacherUuid = sessionStorage.getItem('userUuid');
@@ -329,8 +321,7 @@ export default function RegularClassesPage() {
         setIsModalOpen(true);
     };
 
-    // 🎯 그리드의 시간표 블록을 클릭하면 기존 데이터를 채운 채로 같은 모달을 편집 모드로 연다.
-    // referenceDate: 클릭한 블록이 속한 날짜 — 수강생 체크 목록을 이 날짜 기준으로 필터링한다.
+    // referenceDate: 클릭한 블록의 날짜 — 수강생 체크 목록 필터링 기준
     const openEditModal = async (cls: RegularClassItem, referenceDate: string) => {
         if (!canManage) return;
         await loadFormOptions();
@@ -351,11 +342,8 @@ export default function RegularClassesPage() {
         setIsModalOpen(true);
     };
 
-    // 🚨 [요일=독립 강의 원칙] 요일마다 완전히 별개의 정규 수업(RegularClass)이므로:
-    // - 새로 등록할 때는 요일을 여러 개 켜서 한 번에 여러 개의 독립된 수업을 배치 생성할 수 있다
-    //   (직전에 입력한 시간을 기본값으로 이어받는다).
-    // - 기존 수업을 수정할 때는 그 수업이 이미 요일 하나만 가진 단일 슬롯이므로, 요일 버튼을 누르면
-    //   추가되는 게 아니라 그 요일로 "교체"된다(기존 시간은 그대로 유지).
+    // 요일=독립 수업 원칙: 신규 등록은 요일 다중 선택으로 배치 생성(직전 시간 이어받음),
+    // 수정은 단일 슬롯이므로 요일 버튼이 추가가 아닌 "교체"로 동작(시간 유지)
     const toggleDay = (day: string) => {
         setForm((prev) => {
             if (editingClass) {
@@ -453,7 +441,7 @@ export default function RegularClassesPage() {
         }
     };
 
-    // ─── 담당 강사 변경(효력일 지정) ──────────────────────────────────────
+    // ─── 담당 강사 변경 ───────────────────────────────────────────────────
 
     const openChangeTeacherModal = () => {
         setChangeTeacherForm({ newTeacherUuid: '', effectiveFrom: formatDateISO(new Date()) });
@@ -543,8 +531,7 @@ export default function RegularClassesPage() {
         await fetchHolidays();
     };
 
-    // 🔄 학부모는 자녀들의 소속 학원을 자동으로 역추적하는 my-children 전용 API를 사용한다
-    // (Member.academy가 없는 학부모 계정도 있고, 자녀가 여러 학원에 다닐 수도 있기 때문).
+    // 학부모는 자녀 소속 학원을 역추적하는 my-children 전용 API 사용
     const fetchHolidays = async () => {
         setIsHolidayLoading(true);
         try {
@@ -578,7 +565,7 @@ export default function RegularClassesPage() {
             setNewHolidayDate('');
             setNewHolidayReason('');
             await fetchHolidays();
-            fetchClasses(); // 현재 보고 있는 주차에 영향이 있을 수 있으므로 갱신
+            fetchClasses();
         } catch (error: any) {
             const msg = error.response?.data?.message || '휴무일 등록 중 오류가 발생했습니다.';
             alert(`[에러] ${msg}`);
@@ -601,7 +588,7 @@ export default function RegularClassesPage() {
         }
     };
 
-    // ─── 그리드 휴무 오버레이 클릭 시 상세(사유 수정/지정 취소) ──────────────────
+    // ─── 휴무 오버레이 상세(사유 수정/지정 취소) ─────────────────────────────
 
     const openHolidayDetailModal = (holiday: HolidayItem) => {
         setHolidayDetailTarget(holiday);
@@ -652,9 +639,8 @@ export default function RegularClassesPage() {
 
     // ─── 결석 처리 ──────────────────────────────────────────────────────────
 
-    // 학부모는 본인 자녀 중에서만, 원장/강사는 그 시간표의 전체 명단 중에서 고를 수 있다.
-    // 🎯 수강 기간이 만료된 자녀는 결석 신청 대상 목록에 아예 노출하지 않는다.
-    // date가 주어지면, 그 날짜에 이미 결석 신청된 수강생은 (중복 신청 방지를 위해) 선택지에서 제외한다.
+    // 학부모는 본인 자녀만, 원장/강사는 전체 명단 중 선택 가능. 수강 기간 만료 자녀는 제외.
+    // date 지정 시 그 날짜에 이미 결석 신청된 수강생은 중복 방지를 위해 제외.
     const getAbsenceStudentOptions = (cls: RegularClassItem, date?: string): MyChildOption[] => {
         const today = formatDateISO(new Date());
         const base = myRole === 'PARENT'
@@ -675,7 +661,7 @@ export default function RegularClassesPage() {
         setAbsenceTarget({ cls, date });
     };
 
-    // 🎯 결석 신청 취소 (학부모: 본인 자녀 / 원장·강사: 소속 학원 수강생). 미사용 상태의 보강권만 함께 회수된다.
+    // 미사용 상태의 보강권만 함께 회수된다
     const handleCancelAbsence = async (studentUuid: string, cls: RegularClassItem, date: string) => {
         if (!confirm(`${date}의 결석 신청을 취소하시겠습니까?\n자동 발급되었던 보강권이 함께 회수됩니다.`)) return;
         try {
@@ -695,7 +681,7 @@ export default function RegularClassesPage() {
         }
     };
 
-    // 그리드 블록 클릭 진입점: 원장/강사는 "수정 vs 결석 처리" 선택 모달을, 학부모는 곧바로 결석 신청 모달을 연다.
+    // 원장/강사는 "수정 vs 결석 처리" 선택 모달, 학부모는 바로 결석 신청 모달
     const handleBlockClick = (cls: RegularClassItem, date: string, isHoliday: boolean) => {
         if (canManage) {
             setBlockActionTarget({ cls, date });
@@ -722,9 +708,7 @@ export default function RegularClassesPage() {
             setBlockActionTarget(null);
             fetchClasses();
         } catch (error: any) {
-            // 🎯 [보강권 전체 정책] 원장/강사가 결석을 대리 처리할 때만 이 409가 올 수 있다(학부모 본인
-            // 신청은 백엔드가 항상 400으로 무조건 막는다) — "그래도 발급하시겠습니까?" 확인 후 승인하면
-            // overrideLimit=true로 같은 요청을 다시 보내 제한을 무시하고 강행한다.
+            // 원장/강사 대리 처리 시에만 409 발생(학부모 본인 신청은 400) — 확인 후 overrideLimit=true로 재요청
             if (error.response?.status === 409 && error.response?.data?.limitExceeded) {
                 setIsSubmittingAbsence(false);
                 if (confirm(`${error.response.data.message}\n\n그래도 보강권을 발급하시겠습니까?`)) {
@@ -741,7 +725,7 @@ export default function RegularClassesPage() {
 
     // ─── 그리드 렌더링 준비 ──────────────────────────────────────────────────
 
-    // 현재 표시 중인 주(월~토)의 요일별 실제 날짜 매핑
+    // 표시 중인 주(월~토)의 요일별 실제 날짜
     const weekDates = useMemo(() => {
         const map: Record<string, string> = {};
         GRID_DAYS.forEach((day, idx) => {
@@ -750,16 +734,14 @@ export default function RegularClassesPage() {
         return map;
     }, [currentWeekStart]);
 
-    // 🎯 날짜(YYYY-MM-DD)별 휴무일 빠른 조회용 맵 — 그리드에서 그 날짜 컬럼 전체를 덮을지 판단하는 데 쓴다.
+    // 날짜별 휴무일 조회 맵 — 그 날짜 컬럼을 덮을지 판단
     const holidayByDate = useMemo(() => {
         const map: Record<string, HolidayItem> = {};
         holidays.forEach((h) => { map[h.date] = h; });
         return map;
     }, [holidays]);
 
-    // 🎯 성능 최적화: 그리드가 (요일 × 시간표) 블록마다 c.weeklyOccurrences.find(...)를 반복 호출하면
-    // 시간표/주간 데이터가 많아질수록 렌더링이 느려진다. "시간표uuid|날짜" 키로 한 번만 맵을 만들어
-    // 블록 렌더링 시에는 O(1) 조회만 하도록 한다.
+    // "시간표uuid|날짜" 키로 O(1) 조회 (블록마다 find() 반복 호출 방지)
     const occurrenceByClassAndDate = useMemo(() => {
         const map: Record<string, WeeklyOccurrence> = {};
         classes.forEach((c) => {
@@ -778,7 +760,7 @@ export default function RegularClassesPage() {
         return formatDateISO(currentWeekStart) === formatDateISO(getMonday(new Date()));
     }, [currentWeekStart]);
 
-    // 그리드 표시 범위(시작~종료 시각)를 실제 등록된 수업 시간에 맞춰 동적으로 계산한다.
+    // 그리드 표시 범위를 등록된 수업 시간에 맞춰 동적 계산
     const { startHour, endHour } = useMemo(() => {
         let minH = 9;
         let maxH = 19;
@@ -836,7 +818,7 @@ export default function RegularClassesPage() {
                         </div>
                     </div>
 
-                    {/* 🎯 원장 전용 강사별 필터 */}
+                    {/* 원장 전용 강사별 필터 */}
                     {myRole === 'ADMIN' && (
                         <div className="mb-4 flex items-center gap-2">
                             <label className="text-xs font-bold text-ink-faint">👨‍🏫 선생님별 조회</label>
@@ -853,7 +835,7 @@ export default function RegularClassesPage() {
                         </div>
                     )}
 
-                    {/* 🎯 주간 날짜 네비게이션 */}
+                    {/* 주간 날짜 네비게이션 */}
                     <div className="mb-4 flex items-center justify-center gap-3 bg-line-soft border border-line-soft rounded-lg py-2.5">
                         <button
                             type="button"
@@ -892,7 +874,7 @@ export default function RegularClassesPage() {
                         </div>
                     ) : (
                         <>
-                        {/* 💻 데스크톱: 요일×시간 그리드 뷰 (좁은 화면에서는 칸이 너무 작아져 보기 어려우므로 숨긴다) */}
+                        {/* 데스크톱: 요일×시간 그리드 뷰 */}
                         <div className="hidden sm:block border border-line rounded-lg overflow-x-auto">
                             <div className="flex min-w-[640px]">
                                 {/* 시간축 라벨 컬럼 */}
@@ -932,8 +914,7 @@ export default function RegularClassesPage() {
                                                 ))}
 
                                                 {holidayForDay ? (
-                                                    // 🏖️ 휴무일로 지정된 날짜는 개별 수업 블록 대신 그 요일 컬럼 전체를 회색으로 덮고 사유를 표시한다.
-                                                    // 사유 수정/지정 취소는 원장·강사만 가능하므로, canManage에게만 클릭을 허용한다.
+                                                    // 휴무일은 개별 블록 대신 요일 컬럼 전체를 덮어 사유 표시 (클릭은 canManage만)
                                                     <button
                                                         type="button"
                                                         disabled={!canManage}
@@ -950,8 +931,7 @@ export default function RegularClassesPage() {
                                                         )}
                                                     </button>
                                                 ) : dayClasses.map((c) => {
-                                                    // 🎯 서버가 이미 그 날짜의 실제 회차(RegularClassSession) 기준으로 계산해 준 occurrence만 신뢰한다.
-                                                    // 휴무가 아니면서 유효 수강생이 없는 회차는 서버가 애초에 목록에서 빼므로, 여기 없으면 블록 자체를 그린다.
+                                                    // occurrence 없음 = 서버가 이미 목록에서 제외한 회차 → 블록 자체를 그리지 않음
                                                     const occurrence = occurrenceByClassAndDate[`${c.uuid}|${dateForDay}`];
                                                     if (!occurrence) return null;
 
@@ -984,9 +964,7 @@ export default function RegularClassesPage() {
                                                             {isHoliday ? (
                                                                 <div className="text-[11px] font-bold leading-tight">🏖️ 휴무</div>
                                                             ) : myRole === 'PARENT' ? (
-                                                                // 🎯 [학부모 뷰 간소화] 정원/타 수강생 명단은 노출하지 않고 학원명·수업명·강의실과
-                                                                // 본인 자녀의 이름·결석 여부만 깔끔하게 표시한다(occurrence의 두 목록 모두
-                                                                // 서버에서 이미 본인 자녀로만 필터링되어 온다 — 타인 정보 노출 걱정 없음).
+                                                                // 학부모 뷰: 정원/타 수강생 명단 숨기고 본인 자녀 이름·결석 여부만 표시
                                                                 <>
                                                                     <div className="text-[10px] leading-tight opacity-80 truncate">{c.academyName}</div>
                                                                     <div className="text-[11px] font-bold leading-tight truncate">{c.title || `${c.teacherName} 선생님 수업`}</div>
@@ -1041,7 +1019,7 @@ export default function RegularClassesPage() {
                             </div>
                         </div>
 
-                        {/* 📱 모바일: 요일별 세로 아젠다 뷰 — 좁은 화면에서 가로 그리드 대신 하루씩 카드로 나열해 읽기 쉽게 한다 */}
+                        {/* 모바일: 요일별 세로 아젠다 뷰 */}
                         <div className="sm:hidden space-y-3">
                             {GRID_DAYS.map((day) => {
                                 const dateForDay = weekDates[day];
@@ -1165,7 +1143,7 @@ export default function RegularClassesPage() {
                     )}
                 </div>
 
-                {/* 🎯 시간표 추가/수정 모달 (원장/강사 전용, 신규·편집 공용) */}
+                {/* 시간표 추가/수정 모달 (원장/강사 전용, 신규·편집 공용) */}
                 {isModalOpen && (
                     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
                         <div className="bg-paper-raised w-full max-w-2xl rounded-lg shadow-lg my-8 animate-fade-in">
@@ -1218,13 +1196,14 @@ export default function RegularClassesPage() {
                                         <div>
                                             <label className="block text-xs font-semibold text-ink-soft mb-1">담당 강사 *</label>
                                             {editingClass ? (
-                                                // 🎯 기존 반의 담당 강사는 즉시 덮어쓰지 않는다 — 효력일을 지정하는 별도 액션으로만 바꾼다.
+                                                // 담당 강사는 즉시 덮어쓰지 않고 효력일 지정 액션으로만 변경
                                                 <div className="flex items-center gap-2">
                                                     <input
                                                         type="text"
-                                                        value={teachersOptions.find((t) => t.uuid === form.teacherUuid)?.name
-                                                            ? `${teachersOptions.find((t) => t.uuid === form.teacherUuid)?.name} 선생님`
-                                                            : '알 수 없음'}
+                                                        value={(() => {
+                                                            const name = teachersOptions.find((t) => t.uuid === form.teacherUuid)?.name;
+                                                            return name ? `${name} 선생님` : '알 수 없음';
+                                                        })()}
                                                         disabled
                                                         className="flex-1 px-3 py-2.5 text-sm border border-line bg-line-soft rounded-lg text-ink-faint outline-none cursor-not-allowed"
                                                     />
@@ -1328,9 +1307,8 @@ export default function RegularClassesPage() {
                                             수강생 명단 (선택, {modalReferenceDate} 기준 수강 기간이 유효한 원생만 표시)
                                         </label>
                                         {(() => {
-                                            // 🎯 이미 이 시간표에 편성된 학생은 기간과 무관하게 항상 노출한다(체크 해제로만 제외 가능하게 하여
-                                            // 목록에서 안 보인다는 이유로 저장 시 의도치 않게 로스터에서 빠지는 사고를 방지한다).
-                                            // 새로 추가할 수 있는 후보는 modalReferenceDate 기준으로 수강 기간이 유효한 학생만 노출한다.
+                                            // 기존 로스터는 기간 무관 항상 노출(체크 해제로만 제외 가능, 실수로 누락 방지).
+                                            // 신규 후보는 modalReferenceDate 기준 수강 기간 유효한 학생만.
                                             const existingRosterUuids = new Set((editingClass?.students || []).map((s) => s.uuid));
                                             const visibleOptions = studentsOptions.filter(
                                                 (s) => existingRosterUuids.has(s.uuid) || isEnrollmentActiveOn(s, modalReferenceDate)
@@ -1618,7 +1596,7 @@ export default function RegularClassesPage() {
                     </div>
                 )}
 
-                {/* 🎯 원장/강사 전용: 블록 클릭 시 "수정 vs 결석 처리" 액션 선택 모달 */}
+                {/* 원장/강사 전용: 블록 클릭 시 "수정 vs 결석 처리" 액션 선택 모달 */}
                 {blockActionTarget && (
                     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
                         <div className="bg-paper-raised w-full max-w-xs rounded-lg shadow-lg p-5 space-y-3 animate-fade-in">
@@ -1735,21 +1713,16 @@ export default function RegularClassesPage() {
                             <div className="p-6 space-y-4">
                                 {(() => {
                                     const occ = absenceTarget.cls.weeklyOccurrences.find((o) => o.date === absenceTarget.date);
+                                    const alreadyAbsent = (myRole === 'PARENT' ? occ?.myAbsentStudents : occ?.absentStudents) || [];
                                     return (
+                                        <>
                                         <div className="p-3.5 bg-line-soft rounded-lg border border-line-soft text-sm">
                                             <div className="font-bold text-ink">{absenceTarget.cls.title || `${absenceTarget.cls.teacherName} 선생님 수업`}</div>
                                             <div className="text-xs text-ink-faint mt-1">
                                                 📅 {absenceTarget.date}{occ && ` · 🕒 ${occ.startTime.slice(0, 5)}~${occ.endTime.slice(0, 5)}`}
                                             </div>
                                         </div>
-                                    );
-                                })()}
-
-                                {(() => {
-                                    const occ = absenceTarget.cls.weeklyOccurrences.find((o) => o.date === absenceTarget.date);
-                                    const alreadyAbsent = (myRole === 'PARENT' ? occ?.myAbsentStudents : occ?.absentStudents) || [];
-                                    if (alreadyAbsent.length === 0) return null;
-                                    return (
+                                        {alreadyAbsent.length > 0 &&
                                         <div>
                                             <label className="block text-xs font-semibold text-ink-soft mb-1.5">
                                                 이미 결석 신청된 수강생
@@ -1770,29 +1743,36 @@ export default function RegularClassesPage() {
                                                 ))}
                                             </div>
                                         </div>
+                                        }
+                                        </>
                                     );
                                 })()}
 
-                                <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">
-                                        {myRole === 'PARENT' ? '결석할 자녀 선택 *' : '결석 처리할 수강생 선택 *'}
-                                    </label>
-                                    {getAbsenceStudentOptions(absenceTarget.cls, absenceTarget.date).length === 0 ? (
-                                        <div className="p-3 text-xs text-ink-faint border border-line-soft rounded-lg bg-line-soft/50">
-                                            {myRole === 'PARENT' ? '결석 신청 가능한 자녀가 없습니다.' : '결석 처리 가능한 수강생이 없습니다.'}
+                                {(() => {
+                                    const absenceOptions = getAbsenceStudentOptions(absenceTarget.cls, absenceTarget.date);
+                                    return (
+                                        <div>
+                                            <label className="block text-xs font-semibold text-ink-soft mb-1.5">
+                                                {myRole === 'PARENT' ? '결석할 자녀 선택 *' : '결석 처리할 수강생 선택 *'}
+                                            </label>
+                                            {absenceOptions.length === 0 ? (
+                                                <div className="p-3 text-xs text-ink-faint border border-line-soft rounded-lg bg-line-soft/50">
+                                                    {myRole === 'PARENT' ? '결석 신청 가능한 자녀가 없습니다.' : '결석 처리 가능한 수강생이 없습니다.'}
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={selectedChildUuid}
+                                                    onChange={(e) => setSelectedChildUuid(e.target.value)}
+                                                    className="w-full px-3 py-2.5 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"
+                                                >
+                                                    {absenceOptions.map((option) => (
+                                                        <option key={option.uuid} value={option.uuid}>{option.name}</option>
+                                                    ))}
+                                                </select>
+                                            )}
                                         </div>
-                                    ) : (
-                                        <select
-                                            value={selectedChildUuid}
-                                            onChange={(e) => setSelectedChildUuid(e.target.value)}
-                                            className="w-full px-3 py-2.5 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"
-                                        >
-                                            {getAbsenceStudentOptions(absenceTarget.cls, absenceTarget.date).map((option) => (
-                                                <option key={option.uuid} value={option.uuid}>{option.name}</option>
-                                            ))}
-                                        </select>
-                                    )}
-                                </div>
+                                    );
+                                })()}
                             </div>
 
                             <div className="px-6 py-4 bg-line-soft border-t border-line-soft rounded-b-lg flex justify-end gap-3">

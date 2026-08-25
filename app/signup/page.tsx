@@ -24,7 +24,7 @@ export default function SignUpPage() {
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
     const [role, setRole] = useState('PARENT');
-    const [phone, setPhone] = useState(''); // 🚨 parentPhone에서 백엔드와 싱크를 위해 공통 변수명 phone으로 변경
+    const [phone, setPhone] = useState('');
 
     const [children, setChildren] = useState<ChildForm[]>([
         { childName: '', birthDate: '', gender: '', schoolName: '', childPhone: '' }
@@ -100,9 +100,7 @@ export default function SignUpPage() {
     };
 
     const handleChildChange = (index: number, field: keyof ChildForm, value: string) => {
-        const updated = [...children];
-        updated[index][field] = value;
-        setChildren(updated);
+        setChildren((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)));
     };
 
     const handleSearchAcademy = async () => {
@@ -153,7 +151,6 @@ export default function SignUpPage() {
             return;
         }
 
-        // 🚨 모든 권한 공통 본인 연락처 유효성 가드
         if (!phone.trim()) {
             setErrorMessage('연락처는 필수 입력 값입니다.');
             return;

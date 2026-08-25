@@ -17,8 +17,6 @@ function toMinutes(hhmm: string) {
     return h * 60 + (m || 0);
 }
 
-// ─── 날짜 유틸 (정규 수업 시간표 페이지와 동일한 방식) ──────────────────────────
-
 function formatDateISO(d: Date): string {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -64,8 +62,7 @@ interface MakeupSlot {
     maxCapacity: number;
     currentCount: number;
     remainingSeats: number;
-    // 🎯 [권한별 표시 차등화] 원장/강사 화면에서는 이미 그 회차에 매칭/편성되어 있는 학생 명단이 함께 내려온다.
-    attendingStudents: RosterStudent[];
+    attendingStudents: RosterStudent[]; // 이미 매칭/편성된 학생 명단(원장/강사 화면 전용)
 }
 
 interface StudentTicketCount {
@@ -88,8 +85,7 @@ export default function MakeupMatchPage() {
     const [selectedStudentUuid, setSelectedStudentUuid] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // 🎯 성능 최적화: 주간 네비게이션 연타 시 먼저 보낸 요청의 응답이 나중에 도착해 화면이 잘못된
-    // 주차로 되돌아가는 경합을 방지한다 — 가장 나중에 보낸 요청의 결과만 반영한다.
+    // 주간 네비게이션 연타 시 늦게 보낸 요청 결과만 반영해 응답 순서 역전을 방지
     const fetchSlotsRequestId = useRef(0);
 
     useEffect(() => {
@@ -167,7 +163,6 @@ export default function MakeupMatchPage() {
         return map;
     }, [currentWeekStart]);
 
-    // 🎯 날짜별 여석 목록을 미리 그룹화해 그리드 렌더링 시 매번 필터링하지 않도록 한다.
     const slotsByDate = useMemo(() => {
         const map: Record<string, MakeupSlot[]> = {};
         slots.forEach((slot) => {
@@ -212,7 +207,6 @@ export default function MakeupMatchPage() {
                         </p>
                     </div>
 
-                    {/* 🎯 주간 날짜 네비게이션 (정규 수업 시간표와 동일) */}
                     <div className="mb-4 flex items-center justify-center gap-3 bg-line-soft border border-line-soft rounded-lg py-2.5">
                         <button
                             type="button"
@@ -251,7 +245,6 @@ export default function MakeupMatchPage() {
                         </div>
                     ) : (
                         <>
-                        {/* 🖥️ PC: 주간 시간표 그리드 */}
                         <div className="hidden sm:block border border-line rounded-lg overflow-x-auto">
                             <div className="flex min-w-[640px]">
                                 {/* 시간축 라벨 컬럼 */}
@@ -310,7 +303,6 @@ export default function MakeupMatchPage() {
                                                             <div className="text-[10px] leading-tight font-bold opacity-95">
                                                                 여석 {slot.remainingSeats}/{slot.maxCapacity}
                                                             </div>
-                                                            {/* 🎯 [권한별 표시 차등화] 원장/강사에게는 이미 매칭/편성된 학생 이름을 명확히 보여준다. */}
                                                             {slot.attendingStudents.length > 0 && (
                                                                 <div className="text-[10px] leading-tight opacity-90 truncate">
                                                                     👤 {slot.attendingStudents.map((s) => s.managementName || s.name).join(', ')}
@@ -326,7 +318,6 @@ export default function MakeupMatchPage() {
                             </div>
                         </div>
 
-                        {/* 📱 모바일: 수강생 관리 페이지와 동일한 카드 리스트 형태 */}
                         <div className="block sm:hidden space-y-5">
                             {GRID_DAYS.map((day) => {
                                 const dateForDay = weekDates[day];
@@ -395,7 +386,6 @@ export default function MakeupMatchPage() {
                 </div>
             </main>
 
-            {/* 🧩 학생 매칭 모달 */}
             {matchTarget && (
                 <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 overflow-y-auto">
                     <div className="bg-paper-raised w-full max-w-sm rounded-lg shadow-lg my-8 animate-fade-in">
