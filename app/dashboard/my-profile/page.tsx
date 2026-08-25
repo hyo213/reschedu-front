@@ -93,7 +93,7 @@ export default function MyProfilePage() {
     const fetchMyChildren = async () => {
         setIsLoadingChildren(true);
         try {
-            const res = await axios.get('http://localhost:8080/api/members/my-children/detail');
+            const res = await axios.get('/api/members/my-children/detail');
             setChildren(res.data);
         } catch (error) {
             console.error('자녀 정보 조회 실패:', error);
@@ -115,7 +115,7 @@ export default function MyProfilePage() {
         if (!academyKeyword.trim()) return;
         setIsSearchingAcademy(true);
         try {
-            const res = await axios.get(`http://localhost:8080/api/academies/search?keyword=${academyKeyword}`);
+            const res = await axios.get(`/api/academies/search?keyword=${academyKeyword}`);
             setAcademySearchResults(res.data);
         } catch (error) {
             console.error('학원 검색 실패:', error);
@@ -145,7 +145,7 @@ export default function MyProfilePage() {
         if (!editingChildUuid || !selectedAcademy) return;
         try {
             setIsAddingAcademy(true);
-            await axios.post(`http://localhost:8080/api/members/my-children/${editingChildUuid}/academies`, {
+            await axios.post(`/api/members/my-children/${editingChildUuid}/academies`, {
                 academyId: selectedAcademy.id,
                 schoolName: childForm.schoolName.trim(),
             });
@@ -153,7 +153,7 @@ export default function MyProfilePage() {
             setAcademyKeyword('');
             setAcademySearchResults([]);
             setSelectedAcademy(null);
-            const res = await axios.get('http://localhost:8080/api/members/my-children/detail');
+            const res = await axios.get('/api/members/my-children/detail');
             setChildren(res.data);
             const updated = (res.data as MyChildDetail[]).find((c) => c.uuid === editingChildUuid);
             if (updated) setEditingChildAcademies(updated.academies);
@@ -186,10 +186,10 @@ export default function MyProfilePage() {
             };
 
             if (editingChildUuid) {
-                await axios.patch(`http://localhost:8080/api/members/my-children/${editingChildUuid}`, payload);
+                await axios.patch(`/api/members/my-children/${editingChildUuid}`, payload);
                 alert('자녀 정보가 수정되었습니다.');
             } else {
-                await axios.post('http://localhost:8080/api/members/my-children', { ...payload, academyId: selectedAcademy!.id });
+                await axios.post('/api/members/my-children', { ...payload, academyId: selectedAcademy!.id });
                 alert('자녀가 추가되었습니다. 원장/강사의 승인 후 정상 이용할 수 있습니다.');
             }
             setIsChildModalOpen(false);
@@ -205,7 +205,7 @@ export default function MyProfilePage() {
     const fetchMyProfile = async () => {
         try {
             setIsLoading(true);
-            const response = await axios.get('http://localhost:8080/api/members/me');
+            const response = await axios.get('/api/members/me');
             const data: MyProfile = response.data;
             setProfile(data);
             setName(data.name);
@@ -232,7 +232,7 @@ export default function MyProfilePage() {
 
         try {
             setIsSubmitting(true);
-            await axios.patch('http://localhost:8080/api/members/me', {
+            await axios.patch('/api/members/me', {
                 name: name.trim(),
                 phone: phone.trim(),
                 currentPassword: currentPassword.trim() === '' ? null : currentPassword,

@@ -25,7 +25,7 @@ export default function TeachersManagementPage() {
         try {
             const academyId = sessionStorage.getItem('academyId');
 
-            const response = await axios.get(`http://localhost:8080/api/members/teachers?academyId=${academyId}`);
+            const response = await axios.get(`/api/members/teachers?academyId=${academyId}`);
 
             setTeachersList(response.data);
         } catch (error: any) {
@@ -42,7 +42,7 @@ export default function TeachersManagementPage() {
         if (!confirm('해당 선생님의 학원 가입을 승인하시겠습니까?')) return;
 
         try {
-            await axios.patch(`http://localhost:8080/api/members/${targetUuid}/approve`, {});
+            await axios.patch(`/api/members/${targetUuid}/approve`, {});
             alert('승인이 완료되었습니다.');
             fetchTeachers(); // 메뉴바 배지 갱신을 위해 리스트 재조회
         } catch (error) {

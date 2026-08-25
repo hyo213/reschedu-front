@@ -15,7 +15,7 @@ export default function LoginPage() {
     setErrorMessage('');
 
     try {
-      const response = await axios.post('http://localhost:8080/api/members/login', {
+      const response = await axios.post('/api/members/login', {
         loginId,
         password,
       }, { withCredentials: true });

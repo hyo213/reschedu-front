@@ -79,7 +79,7 @@ export default function NoticeListPage() {
 
     const fetchMyChildrenAcademies = async () => {
         try {
-            const res = await axios.get('http://localhost:8080/api/members/my-children-academies');
+            const res = await axios.get('/api/members/my-children-academies');
             const list: AcademyOption[] = res.data;
             setAcademies(list);
             if (list.length > 0) {
@@ -97,8 +97,8 @@ export default function NoticeListPage() {
         try {
             const isWriter = role === 'ADMIN' || role === 'TEACHER';
             const url = isWriter
-                ? `http://localhost:8080/api/notices?academyId=${academyId}`
-                : `http://localhost:8080/api/notices/active?academyId=${academyId}`;
+                ? `/api/notices?academyId=${academyId}`
+                : `/api/notices/active?academyId=${academyId}`;
 
             const res = await axios.get(url);
             setNotices(res.data);
@@ -123,7 +123,7 @@ export default function NoticeListPage() {
         setIsSaving(true);
         try {
             const academyId = sessionStorage.getItem('academyId');
-            await axios.post(`http://localhost:8080/api/notices?academyId=${academyId}`, {
+            await axios.post(`/api/notices?academyId=${academyId}`, {
                 title: form.title,
                 content: form.content,
                 visible: form.visible,

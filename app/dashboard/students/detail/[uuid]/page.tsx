@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import CommonMenuBar from '../../../components/commonMenuBar';
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = '/api';
 
 interface TeacherOption {
     uuid: string;

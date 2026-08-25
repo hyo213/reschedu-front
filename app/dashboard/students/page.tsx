@@ -29,7 +29,7 @@ interface StudentMember {
     weeklyFrequency: number | null; // 희망 주당 횟수 (schedules.length와 다를 수 있음)
 }
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = '/api';
 
 const DAY_LABELS: Record<string, string> = {
     MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목',

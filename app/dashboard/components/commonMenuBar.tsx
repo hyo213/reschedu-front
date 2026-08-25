@@ -56,7 +56,7 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
         try {
             const academyId = sessionStorage.getItem('academyId');
 
-            const response = await axios.get(`http://localhost:8080/api/members/teachers?academyId=${academyId}`);
+            const response = await axios.get(`/api/members/teachers?academyId=${academyId}`);
 
             const pendingList = response.data.filter((teacher: MemberData) => !teacher.isApproved);
             setPendingTeacherCount(pendingList.length);
@@ -70,7 +70,7 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
             const academyId = sessionStorage.getItem('academyId');
             const teacherUuid = sessionStorage.getItem('userUuid');
 
-            let url = `http://localhost:8080/api/members/students?academyId=${academyId}`;
+            let url = `/api/members/students?academyId=${academyId}`;
 
             // 강사는 본인 담당 수강생만 카운트
             if (role === 'TEACHER' && teacherUuid && teacherUuid.trim() !== '') {
@@ -89,7 +89,7 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
     const fetchPendingMakeupRequestCount = async () => {
         try {
             const academyId = sessionStorage.getItem('academyId');
-            const response = await axios.get(`http://localhost:8080/api/makeup-requests/pending?academyId=${academyId}`);
+            const response = await axios.get(`/api/makeup-requests/pending?academyId=${academyId}`);
             setPendingMakeupRequestCount(response.data.length);
         } catch (error) {
             console.error('메뉴바 보강 신청 대기 카운트 로딩 실패:', error);
@@ -99,7 +99,7 @@ export default function CommonMenuBar({ children }: CommonMenuBarProps) {
     const handleLogout = async () => {
         try {
             // credentials 포함해야 서버가 만료시킬 토큰을 식별하고 Set-Cookie로 삭제해준다.
-            await fetch('http://localhost:8080/api/members/logout', {
+            await fetch('/api/members/logout', {
                 method: 'POST',
                 credentials: 'include',
             });

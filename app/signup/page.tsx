@@ -65,7 +65,7 @@ export default function SignUpPage() {
 
         const checkEmailDuplicate = async () => {
             try {
-                await axios.get(`http://localhost:8080/api/members/check-email?email=${email}`);
+                await axios.get(`/api/members/check-email?email=${email}`);
                 setEmailError('');
                 setIsEmailAvailable(true);
             } catch (error: any) {
@@ -108,7 +108,7 @@ export default function SignUpPage() {
         setIsSearching(true);
         setAcademySearchMessage('');
         try {
-            const response = await axios.get(`http://localhost:8080/api/academies/search?keyword=${academyKeyword}`);
+            const response = await axios.get(`/api/academies/search?keyword=${academyKeyword}`);
             setSearchResults(response.data);
             if (response.data.length === 0) {
                 setAcademySearchMessage('검색 결과가 없습니다.');
@@ -123,7 +123,7 @@ export default function SignUpPage() {
     const handleSendAuthCode = async () => {
         if (!isEmailAvailable) return;
         try {
-            await axios.post('http://localhost:8080/api/members/email-auth/send', { email });
+            await axios.post('/api/members/email-auth/send', { email });
             setIsAuthSent(true);
             setErrorMessage('');
         } catch (error: any) {
@@ -133,7 +133,7 @@ export default function SignUpPage() {
 
     const handleVerifyAuthCode = async () => {
         try {
-            await axios.post('http://localhost:8080/api/members/email-auth/verify', { email, code: authCode });
+            await axios.post('/api/members/email-auth/verify', { email, code: authCode });
             setIsEmailVerified(true);
             setErrorMessage('');
         } catch (error: any) {
@@ -173,7 +173,7 @@ export default function SignUpPage() {
                     setErrorMessage('등록할 학원(센터) 이름을 입력해주세요.');
                     return;
                 }
-                const academyRegResponse = await axios.post('http://localhost:8080/api/academies/register', {
+                const academyRegResponse = await axios.post('/api/academies/register', {
                     name: newAcademyName,
                     address: newAcademyAddress
                 });
@@ -185,7 +185,7 @@ export default function SignUpPage() {
                 return;
             }
 
-            await axios.post('http://localhost:8080/api/members/signup', {
+            await axios.post('/api/members/signup', {
                 email,
                 password,
                 name,

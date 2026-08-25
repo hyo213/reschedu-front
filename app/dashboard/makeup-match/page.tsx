@@ -72,7 +72,7 @@ interface StudentTicketCount {
     remainingTicketCount: number;
 }
 
-const API_BASE = 'http://localhost:8080/api';
+const API_BASE = '/api';
 
 export default function MakeupMatchPage() {
     const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => getMonday(new Date()));

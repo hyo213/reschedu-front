@@ -96,7 +96,7 @@ export default function MakeupCenterPage() {
     const fetchPolicy = async () => {
         try {
             const academyId = sessionStorage.getItem('academyId');
-            const res = await axios.get(`http://localhost:8080/api/makeup-ticket-policy?academyId=${academyId}`);
+            const res = await axios.get(`/api/makeup-ticket-policy?academyId=${academyId}`);
             setPolicy(res.data);
         } catch (error) {
             console.error('보강권 정책 조회 실패:', error);
@@ -120,7 +120,7 @@ export default function MakeupCenterPage() {
         try {
             setIsSubmittingPolicy(true);
             const academyId = sessionStorage.getItem('academyId');
-            const res = await axios.put(`http://localhost:8080/api/makeup-ticket-policy?academyId=${academyId}`, {
+            const res = await axios.put(`/api/makeup-ticket-policy?academyId=${academyId}`, {
                 maxOutstandingTickets: policyForm.maxOutstandingUnlimited ? null : Number(policyForm.maxOutstandingTickets),
                 monthlyIssueLimit: policyForm.monthlyIssueUnlimited ? null : Number(policyForm.monthlyIssueLimit),
                 defaultValidityDays: policyForm.defaultValidityUnlimited ? null : Number(policyForm.defaultValidityDays),
@@ -140,7 +140,7 @@ export default function MakeupCenterPage() {
         setIsLoadingPending(true);
         try {
             const academyId = sessionStorage.getItem('academyId');
-            const res = await axios.get(`http://localhost:8080/api/makeup-requests/pending?academyId=${academyId}`);
+            const res = await axios.get(`/api/makeup-requests/pending?academyId=${academyId}`);
             setPendingRequests(res.data);
         } catch (error) {
             console.error('보강 신청 대기 목록 조회 실패:', error);
@@ -157,7 +157,7 @@ export default function MakeupCenterPage() {
             setDecidingRequestUuid(request.uuid);
             const academyId = sessionStorage.getItem('academyId');
             await axios.patch(
-                `http://localhost:8080/api/makeup-requests/${request.uuid}/${decision}?academyId=${academyId}`,
+                `/api/makeup-requests/${request.uuid}/${decision}?academyId=${academyId}`,
                 {}
             );
             alert(`보강 신청이 ${label}되었습니다.`);
@@ -175,7 +175,7 @@ export default function MakeupCenterPage() {
         setIsLoading(true);
         try {
             const academyId = sessionStorage.getItem('academyId');
-            const res = await axios.get(`http://localhost:8080/api/makeup-tickets/counts?academyId=${academyId}`);
+            const res = await axios.get(`/api/makeup-tickets/counts?academyId=${academyId}`);
             setCounts(res.data);
         } catch (error) {
             console.error('보강권 잔여 개수 조회 실패:', error);
@@ -199,7 +199,7 @@ export default function MakeupCenterPage() {
         try {
             const academyId = sessionStorage.getItem('academyId');
             const res = await axios.get(
-                `http://localhost:8080/api/makeup-tickets/details?academyId=${academyId}&studentUuid=${studentUuid}`
+                `/api/makeup-tickets/details?academyId=${academyId}&studentUuid=${studentUuid}`
             );
             setDetailsByStudent((prev) => ({ ...prev, [studentUuid]: res.data }));
         } catch (error) {
@@ -226,7 +226,7 @@ export default function MakeupCenterPage() {
             setIsSubmittingGrant(true);
             const academyId = sessionStorage.getItem('academyId');
             await axios.post(
-                `http://localhost:8080/api/makeup-tickets/grant?academyId=${academyId}`,
+                `/api/makeup-tickets/grant?academyId=${academyId}`,
                 {
                     studentUuid: grantForm.studentUuid,
                     quantity: grantForm.quantity,

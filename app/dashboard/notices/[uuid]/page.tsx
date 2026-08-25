@@ -60,7 +60,7 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
         setIsLoading(true);
         try {
             const academyId = resolveAcademyId();
-            const res = await axios.get(`http://localhost:8080/api/notices/${uuid}?academyId=${academyId}`);
+            const res = await axios.get(`/api/notices/${uuid}?academyId=${academyId}`);
             setNotice(res.data);
         } catch (error) {
             const msg = axios.isAxiosError(error) ? error.response?.data?.message : null;
@@ -92,7 +92,7 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
         setIsSaving(true);
         try {
             const academyId = sessionStorage.getItem('academyId');
-            const res = await axios.patch(`http://localhost:8080/api/notices/${uuid}?academyId=${academyId}`, {
+            const res = await axios.patch(`/api/notices/${uuid}?academyId=${academyId}`, {
                 title: form.title,
                 content: form.content,
                 visible: form.visible,
@@ -113,7 +113,7 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
         if (!confirm('이 공지사항을 삭제하시겠습니까?')) return;
         try {
             const academyId = sessionStorage.getItem('academyId');
-            await axios.delete(`http://localhost:8080/api/notices/${uuid}?academyId=${academyId}`);
+            await axios.delete(`/api/notices/${uuid}?academyId=${academyId}`);
             router.push('/dashboard/notices');
         } catch (error) {
             const msg = axios.isAxiosError(error) ? error.response?.data?.message : null;

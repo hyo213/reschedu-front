@@ -59,8 +59,8 @@ export default function DashboardPage() {
     const fetchRecentNotices = async (role: string) => {
         try {
             const url = role === 'PARENT'
-                ? 'http://localhost:8080/api/notices/my-children-active'
-                : `http://localhost:8080/api/notices/active?academyId=${sessionStorage.getItem('academyId')}`;
+                ? '/api/notices/my-children-active'
+                : `/api/notices/active?academyId=${sessionStorage.getItem('academyId')}`;
             const res = await axios.get(url);
             setRecentNotices((res.data as NoticeSummary[]).slice(0, 3));
         } catch (error) {
@@ -74,11 +74,11 @@ export default function DashboardPage() {
             let url: string;
 
             if (role === 'PARENT') {
-                url = 'http://localhost:8080/api/regular-classes/my-children/next';
+                url = '/api/regular-classes/my-children/next';
             } else {
                 const academyId = sessionStorage.getItem('academyId');
                 const teacherUuid = sessionStorage.getItem('userUuid');
-                url = `http://localhost:8080/api/regular-classes/next?academyId=${academyId}`;
+                url = `/api/regular-classes/next?academyId=${academyId}`;
                 if (role === 'TEACHER' && teacherUuid && teacherUuid.trim() !== '') {
                     url += `&teacherUuid=${teacherUuid}`;
                 }
@@ -100,14 +100,14 @@ export default function DashboardPage() {
             const academyId = sessionStorage.getItem('academyId');
             const teacherUuid = sessionStorage.getItem('userUuid');
 
-            let studentsUrl = `http://localhost:8080/api/members/students?academyId=${academyId}`;
+            let studentsUrl = `/api/members/students?academyId=${academyId}`;
             if (role === 'TEACHER' && teacherUuid && teacherUuid.trim() !== '') {
                 studentsUrl += `&teacherUuid=${teacherUuid}`;
             }
 
             const requests = [axios.get(studentsUrl)];
             if (role === 'ADMIN') {
-                requests.push(axios.get(`http://localhost:8080/api/members/teachers?academyId=${academyId}`));
+                requests.push(axios.get(`/api/members/teachers?academyId=${academyId}`));
             }
 
             const [studentsRes, teachersRes] = await Promise.all(requests);

@@ -50,7 +50,7 @@ export default function NotificationListener() {
             eventSourceRef.current?.close();
             connectedUuidRef.current = userUuid;
 
-            const source = new EventSource('http://localhost:8080/api/notifications/stream', {
+            const source = new EventSource('/api/notifications/stream', {
                 withCredentials: true,
             });
             eventSourceRef.current = source;
