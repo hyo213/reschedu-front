@@ -575,7 +575,7 @@ export default function RegularClassesPage() {
     };
 
     const handleDeleteHoliday = async (holiday: HolidayItem) => {
-        if (!confirm(`${holiday.date} 휴무일을 삭제하시겠습니까?\n이 날짜 때문에 자동 발급된 미사용 보강권은 회수됩니다.`)) return;
+        if (!confirm(`${holiday.date} 휴무일을 삭제하시겠습니까?\n이 날짜로 발급된 보강권 중 미사용분은 회수되고, 아직 지나지 않은 매칭 보강도 함께 취소되어 복원됩니다.`)) return;
         try {
             const academyId = sessionStorage.getItem('academyId');
             const res = await axios.delete(`${API_BASE}/academy-holidays/${holiday.uuid}?academyId=${academyId}`);
@@ -618,7 +618,7 @@ export default function RegularClassesPage() {
 
     const handleCancelHolidayFromGrid = async () => {
         if (!holidayDetailTarget) return;
-        if (!confirm(`${holidayDetailTarget.date} 휴무일 지정을 취소하시겠습니까?\n이 날짜 때문에 자동 발급된 미사용 보강권은 회수되고, 수업 칸은 원래 정규 수업 상태로 복원됩니다.`)) return;
+        if (!confirm(`${holidayDetailTarget.date} 휴무일 지정을 취소하시겠습니까?\n이 날짜로 발급된 보강권 중 미사용분은 회수되고, 아직 지나지 않은 매칭 보강도 함께 취소·복원되며, 수업 칸은 원래 정규 수업 상태로 복원됩니다.`)) return;
         try {
             setIsCancellingHolidayFromGrid(true);
             const academyId = sessionStorage.getItem('academyId');
@@ -1685,7 +1685,7 @@ export default function RegularClassesPage() {
                                     {isCancellingHolidayFromGrid ? '처리 중..' : '🗑️ 휴무일 지정 취소'}
                                 </button>
                                 <p className="text-[11px] text-ink-faint leading-relaxed">
-                                    💡 지정 취소 시 이 날짜 때문에 자동 발급되었던 미사용 보강권이 학생별로 회수되고, 수업 칸은 원래 정규 수업 상태로 복원됩니다.
+                                    💡 지정 취소 시 이 날짜로 발급되었던 보강권 중 미사용분은 학생별로 회수되고, 아직 지나지 않은 매칭 보강도 함께 취소되어 보강권이 복원됩니다. 수업 칸은 원래 정규 수업 상태로 복원됩니다.
                                 </p>
                             </div>
                         </div>

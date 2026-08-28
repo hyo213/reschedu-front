@@ -53,7 +53,7 @@ interface MakeupRequestItem {
     targetDate: string;
     targetStartTime: string;
     targetEndTime: string;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
     requestedAt: string;
     decidedAt: string | null;
 }

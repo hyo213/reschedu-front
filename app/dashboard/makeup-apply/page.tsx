@@ -116,7 +116,7 @@ interface MakeupRequestItem {
     targetDate: string;
     targetStartTime: string;
     targetEndTime: string;
-    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
     requestedAt: string;
     decidedAt: string | null;
 }
@@ -125,6 +125,7 @@ const STATUS_LABELS: Record<MakeupRequestItem['status'], { text: string; classNa
     PENDING: { text: '⏳ 대기중', className: 'bg-warning-soft text-warning' },
     APPROVED: { text: '✅ 수락됨', className: 'bg-success-soft text-success' },
     REJECTED: { text: '❌ 거절됨', className: 'bg-line-soft text-ink-faint' },
+    CANCELLED: { text: '↩️ 휴무 취소로 자동 취소됨', className: 'bg-line-soft text-ink-faint' },
 };
 
 interface AcademyOption {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface NotificationEventPayload {
-    type: 'MAKEUP_TICKET_ISSUED' | 'TEACHER_SIGNUP_PENDING' | 'STUDENT_ENROLLMENT_PENDING';
+    type: 'MAKEUP_TICKET_ISSUED' | 'MAKEUP_MATCH_CANCELLED' | 'TEACHER_SIGNUP_PENDING' | 'STUDENT_ENROLLMENT_PENDING';
     message: string;
     linkPath: string;
 }
@@ -22,6 +22,7 @@ let toastSeq = 0;
 // 알림 종류별 강조 아이콘. 서버가 보내는 type과 1:1로 맞춘다.
 const TYPE_ICON: Record<NotificationEventPayload['type'], string> = {
     MAKEUP_TICKET_ISSUED: '🎟️',
+    MAKEUP_MATCH_CANCELLED: '↩️',
     TEACHER_SIGNUP_PENDING: '🧑‍🏫',
     STUDENT_ENROLLMENT_PENDING: '🧒',
 };
