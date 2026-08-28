@@ -142,6 +142,7 @@ interface HolidayItem {
     uuid: string;
     date: string;
     reason: string | null;
+    issueMakeupTickets: boolean;
     issuedTicketCount: number | null;
 }
 
@@ -202,6 +203,7 @@ export default function RegularClassesPage() {
     const [isHolidayLoading, setIsHolidayLoading] = useState(false);
     const [newHolidayDate, setNewHolidayDate] = useState('');
     const [newHolidayReason, setNewHolidayReason] = useState('');
+    const [newHolidayIssueMakeupTickets, setNewHolidayIssueMakeupTickets] = useState(true);
     const [isSubmittingHoliday, setIsSubmittingHoliday] = useState(false);
 
     // 결석 처리 (학부모: 본인 자녀만 / 원장·강사: 소속 학원 수강생 누구나)
@@ -559,11 +561,12 @@ export default function RegularClassesPage() {
             const academyId = sessionStorage.getItem('academyId');
             const res = await axios.post(
                 `${API_BASE}/academy-holidays?academyId=${academyId}`,
-                { date: newHolidayDate, reason: newHolidayReason.trim() || null }
+                { date: newHolidayDate, reason: newHolidayReason.trim() || null, issueMakeupTickets: newHolidayIssueMakeupTickets }
             );
             alert(`휴무일이 등록되었습니다. (자동 발급된 보강권: ${res.data.issuedTicketCount ?? 0}개)`);
             setNewHolidayDate('');
             setNewHolidayReason('');
+            setNewHolidayIssueMakeupTickets(true);
             await fetchHolidays();
             fetchClasses();
         } catch (error: any) {
@@ -1532,7 +1535,7 @@ export default function RegularClassesPage() {
                             <div className="p-6 bg-gradient-to-r from-warning-soft to-accent-soft/50 border-b border-line-soft rounded-t-lg flex items-center justify-between">
                                 <div>
                                     <h3 className="text-lg font-bold text-ink">🏖️ 학원 휴무일 관리</h3>
-                                    <p className="text-xs text-ink-faint mt-1">등록한 날짜는 정규 수업이 자동 취소되고, 수강생 전원에게 보강권이 발급됩니다.</p>
+                                    <p className="text-xs text-ink-faint mt-1">등록한 날짜는 정규 수업이 자동 취소되고, 보강권 지급 여부는 아래에서 선택할 수 있습니다.</p>
                                 </div>
                                 <button
                                     type="button"
@@ -1560,6 +1563,15 @@ export default function RegularClassesPage() {
                                         className="px-3 py-2.5 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"
                                     />
                                 </div>
+                                <label className="flex items-center gap-2 text-xs text-ink-soft">
+                                    <input
+                                        type="checkbox"
+                                        checked={newHolidayIssueMakeupTickets}
+                                        onChange={(e) => setNewHolidayIssueMakeupTickets(e.target.checked)}
+                                        className="rounded border-line"
+                                    />
+                                    이 휴무일에 보강권 지급 (체크 해제 시 수업만 취소되고 보강권은 발급되지 않습니다)
+                                </label>
                                 <button
                                     type="submit"
                                     disabled={isSubmittingHoliday}
@@ -1580,6 +1592,9 @@ export default function RegularClassesPage() {
                                             <div>
                                                 <span className="text-sm font-bold text-ink">{h.date}</span>
                                                 {h.reason && <span className="ml-2 text-xs text-ink-faint">{h.reason}</span>}
+                                                {!h.issueMakeupTickets && (
+                                                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded-full bg-line-soft text-ink-faint">보강권 미지급</span>
+                                                )}
                                             </div>
                                             <button
                                                 type="button"
