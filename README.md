@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ReschEdu Frontend
 
-## Getting Started
+학원 시간표/보강 관리 서비스 프론트엔드. 원장·강사·학부모 세 역할이 같은 앱을 다르게 씀.
 
-First, run the development server:
+- 🔗 백엔드: https://github.com/hyo213/reschedu-back
+- 🧱 Next.js 16(App Router, Turbopack) · TypeScript · Tailwind CSS · axios
+
+## 📱 화면 구성
+
+| 화면 | 내용 |
+|---|---|
+| 정규 수업 | 주간 시간표, 반 편성, 담당 강사 인계 |
+| 수강생 관리 | 등록/승인, 수강 기간, 인계 이력 |
+| 보강권 관리 | 잔여 보강권, 정책 설정, 수동 지급 |
+| 보강 신청/매칭 | 여석 조회, 신청, 원장/강사 직접 매칭 |
+| 공지사항 / 마이페이지 | 다학원 자녀 지원(학부모) |
+| 실시간 알림 | SSE 토스트 (보강권 발급, 가입 승인 대기) |
+
+## 🛠 Tech Stack
+
+- ⚛️ Next.js 16 (App Router, Turbopack)
+- 🔷 TypeScript
+- 🎨 Tailwind CSS
+- 🌐 axios (전역 인터셉터로 401/403 세션 만료 처리)
+- 📡 `EventSource`(SSE)
+- 🔐 JWT httpOnly 쿠키 (`withCredentials: true`)
+
+## 🚀 실행 방법
+
+백엔드(`localhost:8080`) 먼저 실행.
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+→ `localhost:3000` 접속
