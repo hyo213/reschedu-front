@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { getErrorMessage } from '../../lib/httpError';
 
 const DAY_LABELS: Record<string, string> = {
     MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목',
@@ -270,9 +271,8 @@ export default function MakeupApplyPage() {
             fetchSlots();
             fetchMyRequests();
             fetchChildTicketCounts(); // 방금 신청에 쓴 보강권이 "사용 가능" 목록에서 즉시 빠지도록 갱신
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '보강 신청 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '보강 신청 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -333,8 +333,9 @@ export default function MakeupApplyPage() {
 
                     {academies.length > 1 && (
                         <div className="mb-4 flex items-center gap-2">
-                            <label className="text-xs font-bold text-ink-faint">🏢 학원 선택</label>
+                            <label htmlFor="academySelect" className="text-xs font-bold text-ink-faint">🏢 학원 선택</label>
                             <select
+                                id="academySelect"
                                 value={selectedAcademyId}
                                 onChange={(e) => setSelectedAcademyId(e.target.value)}
                                 className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg outline-none bg-paper-raised text-ink-soft"
@@ -655,13 +656,14 @@ export default function MakeupApplyPage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-ink-soft mb-1.5">보강 신청할 자녀 선택 *</label>
+                                <label htmlFor="applyChildSelect" className="block text-xs font-semibold text-ink-soft mb-1.5">보강 신청할 자녀 선택 *</label>
                                 {childrenWithTickets.length === 0 ? (
                                     <div className="p-3 text-xs text-ink-faint border border-line-soft rounded-lg bg-line-soft/50">
                                         보강권을 보유한 자녀가 없습니다.
                                     </div>
                                 ) : (
                                     <select
+                                        id="applyChildSelect"
                                         value={selectedChildUuid}
                                         onChange={(e) => setSelectedChildUuid(e.target.value)}
                                         className="w-full px-3 py-2.5 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"

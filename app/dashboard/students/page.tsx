@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { getErrorMessage } from '../../lib/httpError';
 
 interface ScheduleSummary {
     dayOfWeek: string;
@@ -160,7 +161,7 @@ export default function StudentsManagementPage() {
 
             const response = await axios.get(url);
             setStudentsList(response.data);
-        } catch (error: any) {
+        } catch (error) {
             console.error('수강생 리스트 조회 오류:', error);
         } finally {
             setIsFetchingData(false);
@@ -224,9 +225,8 @@ export default function StudentsManagementPage() {
             setIsAddModalOpen(false);
             setManualForm(initialManualForm);
             fetchStudents();
-        } catch (error: any) {
-            const errorMsg = error.response?.data?.message || '수강생 등록 중 오류가 발생했습니다.';
-            alert(`[에러] ${errorMsg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '수강생 등록 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -271,9 +271,8 @@ export default function StudentsManagementPage() {
             alert('수강 기간이 저장되었습니다.');
             setPeriodTarget(null);
             fetchStudents();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '수강 기간 저장 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '수강 기간 저장 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmittingPeriod(false);
         }
@@ -303,9 +302,8 @@ export default function StudentsManagementPage() {
             );
             alert(`수강기간이 ${newEndDate}까지 연장되었습니다.`);
             fetchStudents();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '수강기간 연장 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '수강기간 연장 중 오류가 발생했습니다.')}`);
         }
     };
 
@@ -618,8 +616,9 @@ export default function StudentsManagementPage() {
                                         <h4 className="text-xs font-bold text-accent uppercase tracking-wider border-b border-line-soft pb-1.5">👪 학부모 계정 정보</h4>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">학부모 이름 *</label>
+                                                <label htmlFor="manualParentName" className="block text-xs font-semibold text-ink-soft mb-1">학부모 이름 *</label>
                                                 <input
+                                                    id="manualParentName"
                                                     type="text"
                                                     required
                                                     value={manualForm.parentName}
@@ -628,8 +627,9 @@ export default function StudentsManagementPage() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">학부모 연락처 (로그인 ID) *</label>
+                                                <label htmlFor="manualParentPhone" className="block text-xs font-semibold text-ink-soft mb-1">학부모 연락처 (로그인 ID) *</label>
                                                 <input
+                                                    id="manualParentPhone"
                                                     type="tel"
                                                     required
                                                     value={manualForm.parentPhone}
@@ -640,8 +640,9 @@ export default function StudentsManagementPage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">임시 비밀번호 (8자 이상) *</label>
+                                            <label htmlFor="manualTemporaryPassword" className="block text-xs font-semibold text-ink-soft mb-1">임시 비밀번호 (8자 이상) *</label>
                                             <input
+                                                id="manualTemporaryPassword"
                                                 type="text"
                                                 required
                                                 minLength={8}
@@ -657,8 +658,9 @@ export default function StudentsManagementPage() {
                                         <h4 className="text-xs font-bold text-accent uppercase tracking-wider border-b border-line-soft pb-1.5">📝 수강생 세부 인적 사항</h4>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">수강생 이름 *</label>
+                                                <label htmlFor="manualStudentName" className="block text-xs font-semibold text-ink-soft mb-1">수강생 이름 *</label>
                                                 <input
+                                                    id="manualStudentName"
                                                     type="text"
                                                     required
                                                     value={manualForm.name}
@@ -667,8 +669,9 @@ export default function StudentsManagementPage() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">관리용 이름 (동명이인 구분용)</label>
+                                                <label htmlFor="manualManagementName" className="block text-xs font-semibold text-ink-soft mb-1">관리용 이름 (동명이인 구분용)</label>
                                                 <input
+                                                    id="manualManagementName"
                                                     type="text"
                                                     value={manualForm.managementName}
                                                     onChange={(e) => handleManualFormChange('managementName', e.target.value)}
@@ -680,8 +683,9 @@ export default function StudentsManagementPage() {
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">성별 *</label>
+                                                <label htmlFor="manualGender" className="block text-xs font-semibold text-ink-soft mb-1">성별 *</label>
                                                 <select
+                                                    id="manualGender"
                                                     required
                                                     value={manualForm.gender}
                                                     onChange={(e) => handleManualFormChange('gender', e.target.value)}
@@ -692,8 +696,9 @@ export default function StudentsManagementPage() {
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">생년월일 *</label>
+                                                <label htmlFor="manualBirthDate" className="block text-xs font-semibold text-ink-soft mb-1">생년월일 *</label>
                                                 <input
+                                                    id="manualBirthDate"
                                                     type="date"
                                                     required
                                                     value={manualForm.birthDate}
@@ -706,8 +711,9 @@ export default function StudentsManagementPage() {
 
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">소속 학교명 *</label>
+                                                <label htmlFor="manualSchoolName" className="block text-xs font-semibold text-ink-soft mb-1">소속 학교명 *</label>
                                                 <input
+                                                    id="manualSchoolName"
                                                     type="text"
                                                     required
                                                     value={manualForm.schoolName}
@@ -716,8 +722,9 @@ export default function StudentsManagementPage() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">원생 본인 연락처 (선택)</label>
+                                                <label htmlFor="manualChildPhone" className="block text-xs font-semibold text-ink-soft mb-1">원생 본인 연락처 (선택)</label>
                                                 <input
+                                                    id="manualChildPhone"
                                                     type="tel"
                                                     value={manualForm.childPhone}
                                                     onChange={(e) => handleManualFormChange('childPhone', e.target.value)}
@@ -728,9 +735,10 @@ export default function StudentsManagementPage() {
                                         </div>
 
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">담당 배정 선생님</label>
+                                            <label htmlFor="manualTeacherField" className="block text-xs font-semibold text-ink-soft mb-1">담당 배정 선생님</label>
                                             {myRole === 'ADMIN' ? (
                                                 <select
+                                                    id="manualTeacherField"
                                                     value={manualForm.teacherUuid}
                                                     onChange={(e) => handleManualFormChange('teacherUuid', e.target.value)}
                                                     className="w-full px-3 py-2.5 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"
@@ -742,6 +750,7 @@ export default function StudentsManagementPage() {
                                                 </select>
                                             ) : (
                                                 <input
+                                                    id="manualTeacherField"
                                                     type="text"
                                                     value="본인 담당으로 자동 배정됩니다"
                                                     disabled
@@ -755,8 +764,9 @@ export default function StudentsManagementPage() {
                                         <h4 className="text-xs font-bold text-accent uppercase tracking-wider border-b border-line-soft pb-1.5">🚌 셔틀 및 기타 (선택)</h4>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">🔺 등원 승차 위치</label>
+                                                <label htmlFor="manualShuttlePickup" className="block text-xs font-semibold text-ink-soft mb-1">🔺 등원 승차 위치</label>
                                                 <input
+                                                    id="manualShuttlePickup"
                                                     type="text"
                                                     value={manualForm.shuttlePickupLocation}
                                                     onChange={(e) => handleManualFormChange('shuttlePickupLocation', e.target.value)}
@@ -764,8 +774,9 @@ export default function StudentsManagementPage() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">🔻 하원 하차 위치</label>
+                                                <label htmlFor="manualShuttleDropoff" className="block text-xs font-semibold text-ink-soft mb-1">🔻 하원 하차 위치</label>
                                                 <input
+                                                    id="manualShuttleDropoff"
                                                     type="text"
                                                     value={manualForm.shuttleDropoffLocation}
                                                     onChange={(e) => handleManualFormChange('shuttleDropoffLocation', e.target.value)}
@@ -774,8 +785,9 @@ export default function StudentsManagementPage() {
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">수강 할인 종류</label>
+                                            <label htmlFor="manualDiscountType" className="block text-xs font-semibold text-ink-soft mb-1">수강 할인 종류</label>
                                             <input
+                                                id="manualDiscountType"
                                                 type="text"
                                                 value={manualForm.discountType}
                                                 onChange={(e) => handleManualFormChange('discountType', e.target.value)}
@@ -784,8 +796,9 @@ export default function StudentsManagementPage() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">학원 전용 비공개 메모</label>
+                                            <label htmlFor="manualMemo" className="block text-xs font-semibold text-ink-soft mb-1">학원 전용 비공개 메모</label>
                                             <textarea
+                                                id="manualMemo"
                                                 rows={3}
                                                 value={manualForm.memo}
                                                 onChange={(e) => handleManualFormChange('memo', e.target.value)}
@@ -798,8 +811,9 @@ export default function StudentsManagementPage() {
                                         <h4 className="text-xs font-bold text-accent uppercase tracking-wider border-b border-line-soft pb-1.5">📅 수강 기간 *</h4>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">수강 시작일 *</label>
+                                                <label htmlFor="manualEnrollmentStartDate" className="block text-xs font-semibold text-ink-soft mb-1">수강 시작일 *</label>
                                                 <input
+                                                    id="manualEnrollmentStartDate"
                                                     type="date"
                                                     required
                                                     value={manualForm.enrollmentStartDate}
@@ -808,8 +822,9 @@ export default function StudentsManagementPage() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-xs font-semibold text-ink-soft mb-1">수강 종료일(납부 완료일) *</label>
+                                                <label htmlFor="manualEnrollmentEndDate" className="block text-xs font-semibold text-ink-soft mb-1">수강 종료일(납부 완료일) *</label>
                                                 <input
+                                                    id="manualEnrollmentEndDate"
                                                     type="date"
                                                     required
                                                     value={manualForm.enrollmentEndDate}
@@ -873,8 +888,9 @@ export default function StudentsManagementPage() {
                                         </div>
                                     )}
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1">수강 시작일</label>
+                                        <label htmlFor="periodStartDate" className="block text-xs font-semibold text-ink-soft mb-1">수강 시작일</label>
                                         <input
+                                            id="periodStartDate"
                                             type="date"
                                             value={periodForm.enrollmentStartDate}
                                             onChange={(e) => setPeriodForm({ ...periodForm, enrollmentStartDate: e.target.value })}
@@ -882,10 +898,11 @@ export default function StudentsManagementPage() {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1">
+                                        <label htmlFor="periodEndDate" className="block text-xs font-semibold text-ink-soft mb-1">
                                             수강 종료일 (= 수강료 납부 완료일)
                                         </label>
                                         <input
+                                            id="periodEndDate"
                                             type="date"
                                             value={periodForm.enrollmentEndDate}
                                             onChange={(e) => setPeriodForm({ ...periodForm, enrollmentEndDate: e.target.value })}

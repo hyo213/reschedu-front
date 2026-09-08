@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { getErrorMessage, getErrorData, isErrorStatus } from '../../lib/httpError';
 
 const DAY_LABELS: Record<string, string> = {
     MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목',
@@ -435,9 +436,8 @@ export default function RegularClassesPage() {
 
             setIsModalOpen(false);
             fetchClasses();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '시간표 저장 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '시간표 저장 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -469,9 +469,8 @@ export default function RegularClassesPage() {
             setIsChangeTeacherModalOpen(false);
             setIsModalOpen(false);
             fetchClasses();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '담당 강사 변경 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '담당 강사 변경 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmittingTeacherChange(false);
         }
@@ -499,9 +498,8 @@ export default function RegularClassesPage() {
             setIsDiscontinueModalOpen(false);
             setIsModalOpen(false);
             fetchClasses();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '반 종료 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '반 종료 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmittingDiscontinue(false);
         }
@@ -518,9 +516,8 @@ export default function RegularClassesPage() {
             alert('반이 삭제되었습니다.');
             setIsModalOpen(false);
             fetchClasses();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '반 삭제 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '반 삭제 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmittingDelete(false);
         }
@@ -569,9 +566,8 @@ export default function RegularClassesPage() {
             setNewHolidayIssueMakeupTickets(true);
             await fetchHolidays();
             fetchClasses();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '휴무일 등록 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '휴무일 등록 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmittingHoliday(false);
         }
@@ -585,9 +581,8 @@ export default function RegularClassesPage() {
             alert(`휴무일이 삭제되었습니다. (회수된 보강권: ${res.data.retractedTicketCount ?? 0}개)`);
             await fetchHolidays();
             fetchClasses();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '휴무일 삭제 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '휴무일 삭제 중 오류가 발생했습니다.')}`);
         }
     };
 
@@ -611,9 +606,8 @@ export default function RegularClassesPage() {
             setHolidayDetailTarget(null);
             await fetchHolidays();
             fetchClasses();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '휴무 사유 수정 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '휴무 사유 수정 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSavingHolidayReason(false);
         }
@@ -632,9 +626,8 @@ export default function RegularClassesPage() {
             setHolidayDetailTarget(null);
             await fetchHolidays();
             fetchClasses();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '휴무일 취소 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '휴무일 취소 중 오류가 발생했습니다.')}`);
         } finally {
             setIsCancellingHolidayFromGrid(false);
         }
@@ -676,9 +669,8 @@ export default function RegularClassesPage() {
             setAbsenceTarget(null);
             setBlockActionTarget(null);
             fetchClasses();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '결석 신청 취소 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '결석 신청 취소 중 오류가 발생했습니다.')}`);
         } finally {
             setIsCancellingAbsence(null);
         }
@@ -710,17 +702,16 @@ export default function RegularClassesPage() {
             setAbsenceTarget(null);
             setBlockActionTarget(null);
             fetchClasses();
-        } catch (error: any) {
+        } catch (error) {
             // 원장/강사 대리 처리 시에만 409 발생(학부모 본인 신청은 400) — 확인 후 overrideLimit=true로 재요청
-            if (error.response?.status === 409 && error.response?.data?.limitExceeded) {
+            if (isErrorStatus(error, 409) && getErrorData<{ limitExceeded?: boolean }>(error)?.limitExceeded) {
                 setIsSubmittingAbsence(false);
-                if (confirm(`${error.response.data.message}\n\n그래도 보강권을 발급하시겠습니까?`)) {
+                if (confirm(`${getErrorMessage(error, '')}\n\n그래도 보강권을 발급하시겠습니까?`)) {
                     await handleSubmitAbsence(true);
                 }
                 return;
             }
-            const msg = error.response?.data?.message || '결석 처리 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+            alert(`[에러] ${getErrorMessage(error, '결석 처리 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmittingAbsence(false);
         }
@@ -824,8 +815,9 @@ export default function RegularClassesPage() {
                     {/* 원장 전용 강사별 필터 */}
                     {myRole === 'ADMIN' && (
                         <div className="mb-4 flex items-center gap-2">
-                            <label className="text-xs font-bold text-ink-faint">👨‍🏫 선생님별 조회</label>
+                            <label htmlFor="teacherFilterSelect" className="text-xs font-bold text-ink-faint">👨‍🏫 선생님별 조회</label>
                             <select
+                                id="teacherFilterSelect"
                                 value={selectedTeacherUuid}
                                 onChange={(e) => setSelectedTeacherUuid(e.target.value)}
                                 className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg outline-none bg-paper-raised text-ink-soft"
@@ -1174,8 +1166,9 @@ export default function RegularClassesPage() {
                                 <div className="p-6 space-y-5 max-h-[65vh] overflow-y-auto">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">수업명 (선택)</label>
+                                            <label htmlFor="classTitle" className="block text-xs font-semibold text-ink-soft mb-1">수업명 (선택)</label>
                                             <input
+                                                id="classTitle"
                                                 type="text"
                                                 value={form.title}
                                                 onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -1184,8 +1177,9 @@ export default function RegularClassesPage() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">강의실 호수 (선택)</label>
+                                            <label htmlFor="classRoomNumber" className="block text-xs font-semibold text-ink-soft mb-1">강의실 호수 (선택)</label>
                                             <input
+                                                id="classRoomNumber"
                                                 type="text"
                                                 value={form.roomNumber}
                                                 onChange={(e) => setForm({ ...form, roomNumber: e.target.value })}
@@ -1197,11 +1191,12 @@ export default function RegularClassesPage() {
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">담당 강사 *</label>
+                                            <label htmlFor="classTeacherField" className="block text-xs font-semibold text-ink-soft mb-1">담당 강사 *</label>
                                             {editingClass ? (
                                                 // 담당 강사는 즉시 덮어쓰지 않고 효력일 지정 액션으로만 변경
                                                 <div className="flex items-center gap-2">
                                                     <input
+                                                        id="classTeacherField"
                                                         type="text"
                                                         value={(() => {
                                                             const name = teachersOptions.find((t) => t.uuid === form.teacherUuid)?.name;
@@ -1220,6 +1215,7 @@ export default function RegularClassesPage() {
                                                 </div>
                                             ) : myRole === 'ADMIN' ? (
                                                 <select
+                                                    id="classTeacherField"
                                                     required
                                                     value={form.teacherUuid}
                                                     onChange={(e) => setForm({ ...form, teacherUuid: e.target.value })}
@@ -1232,6 +1228,7 @@ export default function RegularClassesPage() {
                                                 </select>
                                             ) : (
                                                 <input
+                                                    id="classTeacherField"
                                                     type="text"
                                                     value="본인 담당으로 자동 배정됩니다"
                                                     disabled
@@ -1240,8 +1237,9 @@ export default function RegularClassesPage() {
                                             )}
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">정원 *</label>
+                                            <label htmlFor="classMaxCapacity" className="block text-xs font-semibold text-ink-soft mb-1">정원 *</label>
                                             <input
+                                                id="classMaxCapacity"
                                                 type="number"
                                                 required
                                                 min={1}
@@ -1253,7 +1251,7 @@ export default function RegularClassesPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1.5">수업 요일 *</label>
+                                        <p className="text-xs font-semibold text-ink-soft mb-1.5">수업 요일 *</p>
                                         <p className="text-[11px] text-ink-faint -mt-0.5 mb-2">
                                             {editingClass
                                                 ? '이 수업은 하나의 요일만 가집니다 — 다른 요일을 누르면 그 요일로 교체됩니다(시간은 유지). 요일을 추가하려면 취소 후 [시간표 추가]로 새로 등록해주세요.'
@@ -1279,7 +1277,7 @@ export default function RegularClassesPage() {
 
                                     {form.timeSlots.length > 0 && (
                                         <div className="space-y-2">
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">요일별 시간 *</label>
+                                            <p className="text-xs font-semibold text-ink-soft mb-1">요일별 시간 *</p>
                                             {form.timeSlots.map((slot) => (
                                                 <div key={slot.dayOfWeek} className="flex items-center gap-2">
                                                     <span className="w-8 flex-shrink-0 text-center text-xs font-bold text-ink-soft bg-line-soft rounded-lg py-2">
@@ -1288,6 +1286,7 @@ export default function RegularClassesPage() {
                                                     <input
                                                         type="time"
                                                         required
+                                                        aria-label={`${DAY_LABELS[slot.dayOfWeek]}요일 시작 시간`}
                                                         value={slot.startTime}
                                                         onChange={(e) => updateSlotTime(slot.dayOfWeek, 'startTime', e.target.value)}
                                                         className="flex-1 px-3 py-2 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"
@@ -1296,6 +1295,7 @@ export default function RegularClassesPage() {
                                                     <input
                                                         type="time"
                                                         required
+                                                        aria-label={`${DAY_LABELS[slot.dayOfWeek]}요일 종료 시간`}
                                                         value={slot.endTime}
                                                         onChange={(e) => updateSlotTime(slot.dayOfWeek, 'endTime', e.target.value)}
                                                         className="flex-1 px-3 py-2 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"
@@ -1306,9 +1306,9 @@ export default function RegularClassesPage() {
                                     )}
 
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1.5">
+                                        <p className="text-xs font-semibold text-ink-soft mb-1.5">
                                             수강생 명단 (선택, {modalReferenceDate} 기준 수강 기간이 유효한 원생만 표시)
-                                        </label>
+                                        </p>
                                         {(() => {
                                             // 기존 로스터는 기간 무관 항상 노출(체크 해제로만 제외 가능, 실수로 누락 방지).
                                             // 신규 후보는 modalReferenceDate 기준 수강 기간 유효한 학생만.
@@ -1425,8 +1425,9 @@ export default function RegularClassesPage() {
                                         그 날짜 이전 기록은 기존 강사로 그대로 남습니다.
                                     </p>
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1">새 담당 강사 *</label>
+                                        <label htmlFor="newTeacherSelect" className="block text-xs font-semibold text-ink-soft mb-1">새 담당 강사 *</label>
                                         <select
+                                            id="newTeacherSelect"
                                             required
                                             value={changeTeacherForm.newTeacherUuid}
                                             onChange={(e) => setChangeTeacherForm({ ...changeTeacherForm, newTeacherUuid: e.target.value })}
@@ -1441,8 +1442,9 @@ export default function RegularClassesPage() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1">적용 시작일 *</label>
+                                        <label htmlFor="changeTeacherEffectiveFrom" className="block text-xs font-semibold text-ink-soft mb-1">적용 시작일 *</label>
                                         <input
+                                            id="changeTeacherEffectiveFrom"
                                             type="date"
                                             required
                                             value={changeTeacherForm.effectiveFrom}
@@ -1496,8 +1498,9 @@ export default function RegularClassesPage() {
                                         (다른 요일 배정은 그대로 유지됩니다). 그 이전 기록은 [수강 히스토리]에 남습니다.
                                     </p>
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1">적용 시작일 *</label>
+                                        <label htmlFor="discontinueEffectiveFrom" className="block text-xs font-semibold text-ink-soft mb-1">적용 시작일 *</label>
                                         <input
+                                            id="discontinueEffectiveFrom"
                                             type="date"
                                             required
                                             value={discontinueEffectiveFrom}
@@ -1548,14 +1551,18 @@ export default function RegularClassesPage() {
 
                             <form onSubmit={handleAddHoliday} className="p-6 pb-4 space-y-3 border-b border-line-soft">
                                 <div className="grid grid-cols-2 gap-3">
+                                    <label htmlFor="newHolidayDate" className="sr-only">휴무일 날짜</label>
                                     <input
+                                        id="newHolidayDate"
                                         type="date"
                                         required
                                         value={newHolidayDate}
                                         onChange={(e) => setNewHolidayDate(e.target.value)}
                                         className="px-3 py-2.5 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"
                                     />
+                                    <label htmlFor="newHolidayReason" className="sr-only">휴무 사유</label>
                                     <input
+                                        id="newHolidayReason"
                                         type="text"
                                         value={newHolidayReason}
                                         onChange={(e) => setNewHolidayReason(e.target.value)}
@@ -1674,8 +1681,9 @@ export default function RegularClassesPage() {
 
                             <div className="p-6 space-y-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">휴무 사유</label>
+                                    <label htmlFor="editHolidayReason" className="block text-xs font-semibold text-ink-soft mb-1.5">휴무 사유</label>
                                     <input
+                                        id="editHolidayReason"
                                         type="text"
                                         value={editHolidayReasonInput}
                                         onChange={(e) => setEditHolidayReasonInput(e.target.value)}
@@ -1739,9 +1747,9 @@ export default function RegularClassesPage() {
                                         </div>
                                         {alreadyAbsent.length > 0 &&
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1.5">
+                                            <p className="text-xs font-semibold text-ink-soft mb-1.5">
                                                 이미 결석 신청된 수강생
-                                            </label>
+                                            </p>
                                             <div className="space-y-1.5">
                                                 {alreadyAbsent.map((s) => (
                                                     <div key={s.uuid} className="flex items-center justify-between px-3 py-2 bg-danger-soft border border-danger-soft rounded-lg">
@@ -1767,7 +1775,7 @@ export default function RegularClassesPage() {
                                     const absenceOptions = getAbsenceStudentOptions(absenceTarget.cls, absenceTarget.date);
                                     return (
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1.5">
+                                            <label htmlFor="absenceStudentSelect" className="block text-xs font-semibold text-ink-soft mb-1.5">
                                                 {myRole === 'PARENT' ? '결석할 자녀 선택 *' : '결석 처리할 수강생 선택 *'}
                                             </label>
                                             {absenceOptions.length === 0 ? (
@@ -1776,6 +1784,7 @@ export default function RegularClassesPage() {
                                                 </div>
                                             ) : (
                                                 <select
+                                                    id="absenceStudentSelect"
                                                     value={selectedChildUuid}
                                                     onChange={(e) => setSelectedChildUuid(e.target.value)}
                                                     className="w-full px-3 py-2.5 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"

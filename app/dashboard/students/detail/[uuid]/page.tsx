@@ -4,6 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import CommonMenuBar from '../../../components/commonMenuBar';
+import { getErrorMessage } from '../../../../lib/httpError';
 
 const API_BASE = '/api';
 
@@ -224,9 +225,8 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
             alert('수업 스케줄이 변경되었습니다. 같은 강사님의 같은 요일·시간에 이미 진행 중인 반이 있었다면 그 반에 합류되었습니다. [시간표 관리] 화면에도 즉시 반영됩니다.');
             setScheduleForm({ ...initialScheduleForm, teacherUuid: myRole === 'TEACHER' ? scheduleForm.teacherUuid : '' });
             fetchScheduleHistory();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '스케줄 변경 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '스케줄 변경 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmittingSchedule(false);
         }
@@ -330,9 +330,8 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
             );
             setIsTeacherHandoverModalOpen(false);
             await loadInitialData();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '담당 강사 변경 중 오류가 발생했습니다.';
-            alert(msg);
+        } catch (error) {
+            alert(getErrorMessage(error, '담당 강사 변경 중 오류가 발생했습니다.'));
         } finally {
             setIsSubmittingHandover(false);
         }
@@ -678,8 +677,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">수업명 (선택)</label>
+                                    <label htmlFor="scheduleTitle" className="block text-xs font-semibold text-ink-soft mb-1">수업명 (선택)</label>
                                     <input
+                                        id="scheduleTitle"
                                         type="text"
                                         value={scheduleForm.title}
                                         onChange={(e) => setScheduleForm((prev) => ({ ...prev, title: e.target.value }))}
@@ -688,8 +688,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">강의실 호수 (선택)</label>
+                                    <label htmlFor="scheduleRoomNumber" className="block text-xs font-semibold text-ink-soft mb-1">강의실 호수 (선택)</label>
                                     <input
+                                        id="scheduleRoomNumber"
                                         type="text"
                                         value={scheduleForm.roomNumber}
                                         onChange={(e) => setScheduleForm((prev) => ({ ...prev, roomNumber: e.target.value }))}
@@ -701,9 +702,10 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">담당 강사 *</label>
+                                    <label htmlFor="scheduleTeacherField" className="block text-xs font-semibold text-ink-soft mb-1">담당 강사 *</label>
                                     {myRole === 'ADMIN' ? (
                                         <select
+                                            id="scheduleTeacherField"
                                             required
                                             value={scheduleForm.teacherUuid}
                                             onChange={(e) => setScheduleForm((prev) => ({ ...prev, teacherUuid: e.target.value }))}
@@ -716,6 +718,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                                         </select>
                                     ) : (
                                         <input
+                                            id="scheduleTeacherField"
                                             type="text"
                                             value="본인 담당으로 자동 배정됩니다"
                                             disabled
@@ -724,8 +727,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                                     )}
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">정원 *</label>
+                                    <label htmlFor="scheduleMaxCapacity" className="block text-xs font-semibold text-ink-soft mb-1">정원 *</label>
                                     <input
+                                        id="scheduleMaxCapacity"
                                         type="number"
                                         required
                                         min={1}
@@ -737,7 +741,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-ink-soft mb-1.5">수업 요일 *</label>
+                                <p className="text-xs font-semibold text-ink-soft mb-1.5">수업 요일 *</p>
                                 <p className="text-[11px] text-ink-faint -mt-0.5 mb-2">
                                     요일을 켜면 그 요일의 시간을 따로 입력할 수 있습니다(예: 월 15시, 수 17시, 금 20시).
                                 </p>
@@ -761,7 +765,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
 
                             {scheduleForm.timeSlots.length > 0 && (
                                 <div className="space-y-2">
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">요일별 시간 *</label>
+                                    <p className="text-xs font-semibold text-ink-soft mb-1">요일별 시간 *</p>
                                     {scheduleForm.timeSlots.map((slot) => (
                                         <div key={slot.dayOfWeek} className="flex items-center gap-2">
                                             <span className="w-8 flex-shrink-0 text-center text-xs font-bold text-ink-soft bg-line-soft rounded-lg py-2">
@@ -770,6 +774,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                                             <input
                                                 type="time"
                                                 required
+                                                aria-label={`${DAY_LABELS[slot.dayOfWeek]}요일 시작 시간`}
                                                 value={slot.startTime}
                                                 onChange={(e) => updateScheduleSlotTime(slot.dayOfWeek, 'startTime', e.target.value)}
                                                 className="flex-1 px-3 py-2 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"
@@ -778,6 +783,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                                             <input
                                                 type="time"
                                                 required
+                                                aria-label={`${DAY_LABELS[slot.dayOfWeek]}요일 종료 시간`}
                                                 value={slot.endTime}
                                                 onChange={(e) => updateScheduleSlotTime(slot.dayOfWeek, 'endTime', e.target.value)}
                                                 className="flex-1 px-3 py-2 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"
@@ -788,8 +794,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                             )}
 
                             <div>
-                                <label className="block text-xs font-semibold text-ink-soft mb-1">적용 시작일 *</label>
+                                <label htmlFor="scheduleEffectiveFrom" className="block text-xs font-semibold text-ink-soft mb-1">적용 시작일 *</label>
                                 <input
+                                    id="scheduleEffectiveFrom"
                                     type="date"
                                     required
                                     value={scheduleForm.effectiveFrom}
@@ -843,8 +850,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                                     전날까지 계속 보입니다.
                                 </p>
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">새 담당 강사 *</label>
+                                    <label htmlFor="handoverNewTeacher" className="block text-xs font-semibold text-ink-soft mb-1">새 담당 강사 *</label>
                                     <select
+                                        id="handoverNewTeacher"
                                         required
                                         value={handoverForm.newTeacherUuid}
                                         onChange={(e) => setHandoverForm({ ...handoverForm, newTeacherUuid: e.target.value })}
@@ -859,8 +867,9 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">적용 시작일 *</label>
+                                    <label htmlFor="handoverEffectiveFrom" className="block text-xs font-semibold text-ink-soft mb-1">적용 시작일 *</label>
                                     <input
+                                        id="handoverEffectiveFrom"
                                         type="date"
                                         required
                                         value={handoverForm.effectiveFrom}

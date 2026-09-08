@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { getErrorMessage } from '../../lib/httpError';
 
 interface TeacherMember {
     uuid: string;
@@ -28,10 +29,9 @@ export default function TeachersManagementPage() {
             const response = await axios.get(`/api/members/teachers?academyId=${academyId}`);
 
             setTeachersList(response.data);
-        } catch (error: any) {
+        } catch (error) {
             console.error('강사 리스트 패치 오류:', error);
-            const errorMsg = error.response?.data?.message || '강사 목록을 불러오는 중 오류가 발생했습니다.';
-            alert(`[에러] ${errorMsg}`);
+            alert(`[에러] ${getErrorMessage(error, '강사 목록을 불러오는 중 오류가 발생했습니다.')}`);
             setTeachersList([]);
         } finally {
             setIsFetchingData(false);

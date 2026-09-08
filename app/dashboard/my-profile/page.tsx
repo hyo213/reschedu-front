@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { getErrorMessage } from '../../lib/httpError';
 
 interface MyProfile {
     uuid: string;
@@ -157,9 +158,8 @@ export default function MyProfilePage() {
             setChildren(res.data);
             const updated = (res.data as MyChildDetail[]).find((c) => c.uuid === editingChildUuid);
             if (updated) setEditingChildAcademies(updated.academies);
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '학원 추가 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '학원 추가 중 오류가 발생했습니다.')}`);
         } finally {
             setIsAddingAcademy(false);
         }
@@ -194,9 +194,8 @@ export default function MyProfilePage() {
             }
             setIsChildModalOpen(false);
             fetchMyChildren();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '자녀 정보 저장 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '자녀 정보 저장 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmittingChild(false);
         }
@@ -247,9 +246,8 @@ export default function MyProfilePage() {
             setNewPasswordConfirm('');
             alert('회원 정보가 수정되었습니다.');
             router.refresh();
-        } catch (error: any) {
-            const errorMsg = error.response?.data?.message || '회원 정보 수정 중 오류가 발생했습니다.';
-            alert(`[에러] ${errorMsg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '회원 정보 수정 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -276,8 +274,9 @@ export default function MyProfilePage() {
 
                             {profile.email && (
                                 <div>
-                                    <label className="block text-sm font-semibold text-ink-soft mb-1.5">이메일</label>
+                                    <label htmlFor="profileEmail" className="block text-sm font-semibold text-ink-soft mb-1.5">이메일</label>
                                     <input
+                                        id="profileEmail"
                                         type="text"
                                         value={profile.email}
                                         disabled
@@ -287,8 +286,9 @@ export default function MyProfilePage() {
                             )}
 
                             <div>
-                                <label className="block text-sm font-semibold text-ink-soft mb-1.5">이름</label>
+                                <label htmlFor="profileName" className="block text-sm font-semibold text-ink-soft mb-1.5">이름</label>
                                 <input
+                                    id="profileName"
                                     type="text"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
@@ -298,8 +298,9 @@ export default function MyProfilePage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-ink-soft mb-1.5">연락처</label>
+                                <label htmlFor="profilePhone" className="block text-sm font-semibold text-ink-soft mb-1.5">연락처</label>
                                 <input
+                                    id="profilePhone"
                                     type="text"
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
@@ -316,8 +317,9 @@ export default function MyProfilePage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-ink-soft mb-1.5">현재 비밀번호</label>
+                                <label htmlFor="currentPassword" className="block text-sm font-semibold text-ink-soft mb-1.5">현재 비밀번호</label>
                                 <input
+                                    id="currentPassword"
                                     type="password"
                                     value={currentPassword}
                                     onChange={(e) => setCurrentPassword(e.target.value)}
@@ -327,8 +329,9 @@ export default function MyProfilePage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-ink-soft mb-1.5">새 비밀번호</label>
+                                <label htmlFor="newPassword" className="block text-sm font-semibold text-ink-soft mb-1.5">새 비밀번호</label>
                                 <input
+                                    id="newPassword"
                                     type="password"
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
@@ -339,8 +342,9 @@ export default function MyProfilePage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-ink-soft mb-1.5">새 비밀번호 확인</label>
+                                <label htmlFor="newPasswordConfirm" className="block text-sm font-semibold text-ink-soft mb-1.5">새 비밀번호 확인</label>
                                 <input
+                                    id="newPasswordConfirm"
                                     type="password"
                                     value={newPasswordConfirm}
                                     onChange={(e) => setNewPasswordConfirm(e.target.value)}
@@ -437,9 +441,10 @@ export default function MyProfilePage() {
                             <div className="p-6 space-y-4">
                                 {!editingChildUuid && (
                                     <div className="p-3.5 bg-line-soft border border-line-soft rounded-lg space-y-2.5">
-                                        <label className="block text-xs font-bold text-ink">🏢 등록할 학원 검색 *</label>
+                                        <label htmlFor="childAcademySearch" className="block text-xs font-bold text-ink">🏢 등록할 학원 검색 *</label>
                                         <div className="flex gap-2">
                                             <input
+                                                id="childAcademySearch"
                                                 type="text"
                                                 value={academyKeyword}
                                                 onChange={(e) => setAcademyKeyword(e.target.value)}
@@ -477,7 +482,7 @@ export default function MyProfilePage() {
 
                                 {editingChildUuid && (
                                     <div className="p-3.5 bg-line-soft border border-line-soft rounded-lg space-y-2.5">
-                                        <label className="block text-xs font-bold text-ink">🏢 다니는 학원</label>
+                                        <p className="text-xs font-bold text-ink">🏢 다니는 학원</p>
                                         <div className="space-y-1.5">
                                             {editingChildAcademies.map((a) => (
                                                 <div key={a.academyId} className="flex items-center justify-between text-xs p-2 bg-paper-raised border border-line-soft rounded-lg">
@@ -490,9 +495,10 @@ export default function MyProfilePage() {
                                         </div>
 
                                         <div className="pt-1 border-t border-line-soft space-y-2">
-                                            <label className="block text-[11px] font-bold text-ink-faint">+ 다른 학원도 다니게 하기</label>
+                                            <label htmlFor="addAcademySearch" className="block text-[11px] font-bold text-ink-faint">+ 다른 학원도 다니게 하기</label>
                                             <div className="flex gap-2">
                                                 <input
+                                                    id="addAcademySearch"
                                                     type="text"
                                                     value={academyKeyword}
                                                     onChange={(e) => setAcademyKeyword(e.target.value)}
@@ -540,8 +546,9 @@ export default function MyProfilePage() {
                                 )}
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">자녀 이름 *</label>
+                                    <label htmlFor="childFormName" className="block text-xs font-semibold text-ink-soft mb-1">자녀 이름 *</label>
                                     <input
+                                        id="childFormName"
                                         type="text"
                                         required
                                         value={childForm.name}
@@ -551,8 +558,9 @@ export default function MyProfilePage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1">성별 *</label>
+                                        <label htmlFor="childFormGender" className="block text-xs font-semibold text-ink-soft mb-1">성별 *</label>
                                         <select
+                                            id="childFormGender"
                                             required
                                             value={childForm.gender}
                                             onChange={(e) => handleChildFormChange('gender', e.target.value)}
@@ -563,8 +571,9 @@ export default function MyProfilePage() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1">생년월일 *</label>
+                                        <label htmlFor="childFormBirthDate" className="block text-xs font-semibold text-ink-soft mb-1">생년월일 *</label>
                                         <input
+                                            id="childFormBirthDate"
                                             type="date"
                                             required
                                             value={childForm.birthDate}
@@ -574,8 +583,9 @@ export default function MyProfilePage() {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">소속 학교명 *</label>
+                                    <label htmlFor="childFormSchoolName" className="block text-xs font-semibold text-ink-soft mb-1">소속 학교명 *</label>
                                     <input
+                                        id="childFormSchoolName"
                                         type="text"
                                         required
                                         value={childForm.schoolName}
@@ -584,8 +594,9 @@ export default function MyProfilePage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">자녀 본인 연락처 (선택)</label>
+                                    <label htmlFor="childFormPhone" className="block text-xs font-semibold text-ink-soft mb-1">자녀 본인 연락처 (선택)</label>
                                     <input
+                                        id="childFormPhone"
                                         type="tel"
                                         value={childForm.childPhone}
                                         onChange={(e) => handleChildFormChange('childPhone', e.target.value)}

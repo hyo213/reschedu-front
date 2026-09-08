@@ -174,8 +174,9 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
                     form && (
                         <form onSubmit={handleUpdate} className="bg-paper-raised rounded-lg border border-line shadow-sm p-6 space-y-4">
                             <div>
-                                <label className="block text-xs font-semibold text-ink-soft mb-1">제목 *</label>
+                                <label htmlFor="noticeEditTitle" className="block text-xs font-semibold text-ink-soft mb-1">제목 *</label>
                                 <input
+                                    id="noticeEditTitle"
                                     type="text"
                                     required
                                     value={form.title}
@@ -184,8 +185,9 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-semibold text-ink-soft mb-1">내용 *</label>
+                                <label htmlFor="noticeEditContent" className="block text-xs font-semibold text-ink-soft mb-1">내용 *</label>
                                 <textarea
+                                    id="noticeEditContent"
                                     required
                                     rows={8}
                                     value={form.content}
@@ -207,8 +209,9 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">노출 시작일 (선택)</label>
+                                    <label htmlFor="noticeEditVisibleFrom" className="block text-xs font-semibold text-ink-soft mb-1">노출 시작일 (선택)</label>
                                     <input
+                                        id="noticeEditVisibleFrom"
                                         type="date"
                                         value={form.visibleFrom}
                                         onChange={(e) => handleFormChange('visibleFrom', e.target.value)}
@@ -216,8 +219,9 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">노출 종료일 (선택)</label>
+                                    <label htmlFor="noticeEditVisibleUntil" className="block text-xs font-semibold text-ink-soft mb-1">노출 종료일 (선택)</label>
                                     <input
+                                        id="noticeEditVisibleUntil"
                                         type="date"
                                         value={form.visibleUntil}
                                         onChange={(e) => handleFormChange('visibleUntil', e.target.value)}

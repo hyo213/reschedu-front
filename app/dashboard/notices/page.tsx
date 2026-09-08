@@ -160,8 +160,9 @@ export default function NoticeListPage() {
 
                 {myRole === 'PARENT' && academies.length > 1 && (
                     <div className="mb-4 flex items-center gap-2">
-                        <label className="text-xs font-bold text-ink-faint">🏢 학원 선택</label>
+                        <label htmlFor="noticeAcademySelect" className="text-xs font-bold text-ink-faint">🏢 학원 선택</label>
                         <select
+                            id="noticeAcademySelect"
                             value={selectedAcademyId}
                             onChange={(e) => setSelectedAcademyId(e.target.value)}
                             className="px-3 py-1.5 text-xs font-semibold border border-line rounded-lg outline-none bg-paper-raised text-ink-soft"
@@ -229,8 +230,9 @@ export default function NoticeListPage() {
 
                                 <div className="p-6 space-y-4">
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1">제목 *</label>
+                                        <label htmlFor="noticeTitle" className="block text-xs font-semibold text-ink-soft mb-1">제목 *</label>
                                         <input
+                                            id="noticeTitle"
                                             type="text"
                                             required
                                             value={form.title}
@@ -239,8 +241,9 @@ export default function NoticeListPage() {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold text-ink-soft mb-1">내용 *</label>
+                                        <label htmlFor="noticeContent" className="block text-xs font-semibold text-ink-soft mb-1">내용 *</label>
                                         <textarea
+                                            id="noticeContent"
                                             required
                                             rows={6}
                                             value={form.content}
@@ -262,8 +265,9 @@ export default function NoticeListPage() {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">노출 시작일 (선택)</label>
+                                            <label htmlFor="noticeVisibleFrom" className="block text-xs font-semibold text-ink-soft mb-1">노출 시작일 (선택)</label>
                                             <input
+                                                id="noticeVisibleFrom"
                                                 type="date"
                                                 value={form.visibleFrom}
                                                 onChange={(e) => handleFormChange('visibleFrom', e.target.value)}
@@ -271,8 +275,9 @@ export default function NoticeListPage() {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold text-ink-soft mb-1">노출 종료일 (선택)</label>
+                                            <label htmlFor="noticeVisibleUntil" className="block text-xs font-semibold text-ink-soft mb-1">노출 종료일 (선택)</label>
                                             <input
+                                                id="noticeVisibleUntil"
                                                 type="date"
                                                 value={form.visibleUntil}
                                                 onChange={(e) => handleFormChange('visibleUntil', e.target.value)}

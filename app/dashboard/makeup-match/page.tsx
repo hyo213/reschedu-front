@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { getErrorMessage } from '../../lib/httpError';
 
 const DAY_LABELS: Record<string, string> = {
     MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목',
@@ -146,9 +147,8 @@ export default function MakeupMatchPage() {
             setMatchTarget(null);
             fetchSlots();
             fetchTicketHolders();
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '보강 매칭 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '보강 매칭 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -419,13 +419,14 @@ export default function MakeupMatchPage() {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-semibold text-ink-soft mb-1.5">보강권 보유 학생 선택 *</label>
+                                <label htmlFor="matchStudentSelect" className="block text-xs font-semibold text-ink-soft mb-1.5">보강권 보유 학생 선택 *</label>
                                 {ticketHolders.length === 0 ? (
                                     <div className="p-3 text-xs text-ink-faint border border-line-soft rounded-lg bg-line-soft/50">
                                         보강권을 보유한 학생이 없습니다.
                                     </div>
                                 ) : (
                                     <select
+                                        id="matchStudentSelect"
                                         value={selectedStudentUuid}
                                         onChange={(e) => setSelectedStudentUuid(e.target.value)}
                                         className="w-full px-3 py-2.5 text-sm border border-line rounded-lg outline-none bg-paper-raised text-ink"

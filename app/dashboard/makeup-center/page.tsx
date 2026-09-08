@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { getErrorMessage, getErrorData, isErrorStatus } from '../../lib/httpError';
 
 interface StudentTicketCount {
     studentUuid: string;
@@ -128,9 +129,8 @@ export default function MakeupCenterPage() {
             setPolicy(res.data);
             alert('보강권 전체 정책이 저장되었습니다.');
             setIsPolicyModalOpen(false);
-        } catch (error: any) {
-            const msg = error.response?.data?.message || '정책 저장 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, '정책 저장 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmittingPolicy(false);
         }
@@ -163,9 +163,8 @@ export default function MakeupCenterPage() {
             alert(`보강 신청이 ${label}되었습니다.`);
             await fetchPendingRequests();
             fetchCounts(); // 수락 시 티켓이 사용 처리되어 잔여 개수가 바뀌므로 함께 갱신
-        } catch (error: any) {
-            const msg = error.response?.data?.message || `보강 신청 ${label} 중 오류가 발생했습니다.`;
-            alert(`[에러] ${msg}`);
+        } catch (error) {
+            alert(`[에러] ${getErrorMessage(error, `보강 신청 ${label} 중 오류가 발생했습니다.`)}`);
         } finally {
             setDecidingRequestUuid(null);
         }
@@ -244,17 +243,16 @@ export default function MakeupCenterPage() {
                 return next;
             });
             fetchCounts();
-        } catch (error: any) {
+        } catch (error) {
             // 정책 한도 초과 시 alert 대신 강제 지급 여부를 확인한다.
-            if (error.response?.status === 409 && error.response?.data?.limitExceeded) {
+            if (isErrorStatus(error, 409) && getErrorData<{ limitExceeded?: boolean }>(error)?.limitExceeded) {
                 setIsSubmittingGrant(false);
-                if (confirm(`${error.response.data.message}\n\n그래도 지급하시겠습니까?`)) {
+                if (confirm(`${getErrorMessage(error, '')}\n\n그래도 지급하시겠습니까?`)) {
                     await submitGrant(true);
                 }
                 return;
             }
-            const msg = error.response?.data?.message || '보강권 지급 중 오류가 발생했습니다.';
-            alert(`[에러] ${msg}`);
+            alert(`[에러] ${getErrorMessage(error, '보강권 지급 중 오류가 발생했습니다.')}`);
         } finally {
             setIsSubmittingGrant(false);
         }
@@ -390,7 +388,9 @@ export default function MakeupCenterPage() {
                         </div>
                     </div>
 
+                    <label htmlFor="studentSearchKeyword" className="sr-only">학생 이름으로 검색</label>
                     <input
+                        id="studentSearchKeyword"
                         type="text"
                         value={searchKeyword}
                         onChange={(e) => setSearchKeyword(e.target.value)}
@@ -541,13 +541,14 @@ export default function MakeupCenterPage() {
 
                             <div className="p-6 space-y-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1.5">지급 대상 학생 *</label>
+                                    <label htmlFor="grantStudentSelect" className="block text-xs font-semibold text-ink-soft mb-1.5">지급 대상 학생 *</label>
                                     {counts.length === 0 ? (
                                         <div className="p-3 text-xs text-ink-faint border border-line-soft rounded-lg bg-line-soft/50">
                                             소속 수강생이 없습니다.
                                         </div>
                                     ) : (
                                         <select
+                                            id="grantStudentSelect"
                                             required
                                             value={grantForm.studentUuid}
                                             onChange={(e) => setGrantForm({ ...grantForm, studentUuid: e.target.value })}
@@ -563,8 +564,9 @@ export default function MakeupCenterPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">지급 개수 *</label>
+                                    <label htmlFor="grantQuantity" className="block text-xs font-semibold text-ink-soft mb-1">지급 개수 *</label>
                                     <input
+                                        id="grantQuantity"
                                         type="number"
                                         required
                                         min={1}
@@ -576,9 +578,10 @@ export default function MakeupCenterPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">유효기간 (일) *</label>
+                                    <label htmlFor="grantValidityDays" className="block text-xs font-semibold text-ink-soft mb-1">유효기간 (일) *</label>
                                     <div className="flex items-center gap-2">
                                         <input
+                                            id="grantValidityDays"
                                             type="number"
                                             min={1}
                                             disabled={grantForm.unlimited}
@@ -601,8 +604,9 @@ export default function MakeupCenterPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">지급 사유 (선택)</label>
+                                    <label htmlFor="grantMemo" className="block text-xs font-semibold text-ink-soft mb-1">지급 사유 (선택)</label>
                                     <input
+                                        id="grantMemo"
                                         type="text"
                                         value={grantForm.memo}
                                         onChange={(e) => setGrantForm({ ...grantForm, memo: e.target.value })}
@@ -654,9 +658,10 @@ export default function MakeupCenterPage() {
 
                             <div className="p-6 space-y-4">
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">학생 1인당 최대 보유(미사용) 개수</label>
+                                    <label htmlFor="policyMaxOutstanding" className="block text-xs font-semibold text-ink-soft mb-1">학생 1인당 최대 보유(미사용) 개수</label>
                                     <div className="flex items-center gap-2">
                                         <input
+                                            id="policyMaxOutstanding"
                                             type="number"
                                             min={1}
                                             disabled={policyForm.maxOutstandingUnlimited}
@@ -678,9 +683,10 @@ export default function MakeupCenterPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">학생 1인당 월 발급 제한</label>
+                                    <label htmlFor="policyMonthlyLimit" className="block text-xs font-semibold text-ink-soft mb-1">학생 1인당 월 발급 제한</label>
                                     <div className="flex items-center gap-2">
                                         <input
+                                            id="policyMonthlyLimit"
                                             type="number"
                                             min={1}
                                             disabled={policyForm.monthlyIssueUnlimited}
@@ -702,9 +708,10 @@ export default function MakeupCenterPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-ink-soft mb-1">기본 유효기간 (일)</label>
+                                    <label htmlFor="policyDefaultValidity" className="block text-xs font-semibold text-ink-soft mb-1">기본 유효기간 (일)</label>
                                     <div className="flex items-center gap-2">
                                         <input
+                                            id="policyDefaultValidity"
                                             type="number"
                                             min={1}
                                             disabled={policyForm.defaultValidityUnlimited}

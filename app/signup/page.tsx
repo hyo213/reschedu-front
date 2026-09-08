@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { getErrorMessage } from '../lib/httpError';
 
 interface Academy {
     id: number;
@@ -68,12 +69,8 @@ export default function SignUpPage() {
                 await axios.get(`/api/members/check-email?email=${email}`);
                 setEmailError('');
                 setIsEmailAvailable(true);
-            } catch (error: any) {
-                if (error.response && error.response.data) {
-                    setEmailError(error.response.data.message || '이미 등록된 이메일입니다.');
-                } else {
-                    setEmailError('중복 확인 중 오류가 발생했습니다.');
-                }
+            } catch (error) {
+                setEmailError(getErrorMessage(error, '이미 등록된 이메일입니다.'));
                 setIsEmailAvailable(false);
             }
         };
@@ -126,8 +123,8 @@ export default function SignUpPage() {
             await axios.post('/api/members/email-auth/send', { email });
             setIsAuthSent(true);
             setErrorMessage('');
-        } catch (error: any) {
-            alert(error.response?.data || '인증번호 발송에 실패했습니다.');
+        } catch (error) {
+            alert(getErrorMessage(error, '인증번호 발송에 실패했습니다.'));
         }
     };
 
@@ -136,8 +133,8 @@ export default function SignUpPage() {
             await axios.post('/api/members/email-auth/verify', { email, code: authCode });
             setIsEmailVerified(true);
             setErrorMessage('');
-        } catch (error: any) {
-            alert(error.response?.data || '인증번호가 일치하지 않습니다.');
+        } catch (error) {
+            alert(getErrorMessage(error, '인증번호가 일치하지 않습니다.'));
         }
     };
 
@@ -201,8 +198,8 @@ export default function SignUpPage() {
             setSuccessMessage('회원가입이 완료되었습니다! 잠시 후 로그인 화면으로 이동합니다.');
             setTimeout(() => { router.push('/'); }, 2000);
 
-        } catch (error: any) {
-            setErrorMessage(error.response?.data?.message || '서버와 통신 중 오류가 발생했습니다.');
+        } catch (error) {
+            setErrorMessage(getErrorMessage(error, '서버와 통신 중 오류가 발생했습니다.'));
         }
     };
 
@@ -216,8 +213,9 @@ export default function SignUpPage() {
 
                 <form onSubmit={handleSignUp} className="space-y-5">
                     <div>
-                        <label className="block text-sm font-medium text-ink-soft mb-1">가입 유형</label>
+                        <label htmlFor="role" className="block text-sm font-medium text-ink-soft mb-1">가입 유형</label>
                         <select
+                            id="role"
                             value={role}
                             onChange={(e) => setRole(e.target.value)}
                             className="w-full px-4 py-2.5 border border-line rounded-md outline-none text-ink bg-paper-raised"
@@ -229,11 +227,13 @@ export default function SignUpPage() {
                     </div>
 
                     <div className="p-4 bg-line-soft border border-line rounded-lg space-y-3">
-                        <label className="block text-sm font-bold text-ink">🏢 소속 학원 / 센터 설정</label>
+                        <p className="text-sm font-bold text-ink">🏢 소속 학원 / 센터 설정</p>
                         {!isCustomAcademyMode ? (
                             <>
                                 <div className="flex gap-2">
+                                    <label htmlFor="academyKeyword" className="sr-only">학원 이름 검색</label>
                                     <input
+                                        id="academyKeyword"
                                         type="text"
                                         value={academyKeyword}
                                         onChange={(e) => setAcademyKeyword(e.target.value)}
@@ -271,8 +271,10 @@ export default function SignUpPage() {
                             </>
                         ) : (
                             <div className="space-y-2.5">
-                                <input type="text" value={newAcademyName} onChange={(e) => setNewAcademyName(e.target.value)} className="w-full px-3 py-2 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" placeholder="새로 개설할 학원명 입력" required />
-                                <input type="text" value={newAcademyAddress} onChange={(e) => setNewAcademyAddress(e.target.value)} className="w-full px-3 py-2 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" placeholder="학원 주소 입력 (선택)" />
+                                <label htmlFor="newAcademyName" className="sr-only">새로 개설할 학원명</label>
+                                <input id="newAcademyName" type="text" value={newAcademyName} onChange={(e) => setNewAcademyName(e.target.value)} className="w-full px-3 py-2 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" placeholder="새로 개설할 학원명 입력" required />
+                                <label htmlFor="newAcademyAddress" className="sr-only">학원 주소 (선택)</label>
+                                <input id="newAcademyAddress" type="text" value={newAcademyAddress} onChange={(e) => setNewAcademyAddress(e.target.value)} className="w-full px-3 py-2 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" placeholder="학원 주소 입력 (선택)" />
                                 <div className="text-right">
                                     <button type="button" onClick={() => setIsCustomAcademyMode(false)} className="text-[11px] text-ink-faint font-semibold hover:underline">🔙 검색으로 돌아가기</button>
                                 </div>
@@ -281,15 +283,16 @@ export default function SignUpPage() {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-ink-soft mb-1">본인 이름 (실명)</label>
-                        <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2.5 border border-line rounded-md outline-none text-ink" placeholder="홍길동" required />
+                        <label htmlFor="name" className="block text-sm font-medium text-ink-soft mb-1">본인 이름 (실명)</label>
+                        <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2.5 border border-line rounded-md outline-none text-ink" placeholder="홍길동" required />
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-ink-soft mb-1">
+                        <label htmlFor="phone" className="block text-sm font-medium text-ink-soft mb-1">
                             {role === 'PARENT' ? '학부모 연락처 *' : '연락처 *'}
                         </label>
                         <input
+                            id="phone"
                             type="tel"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
@@ -313,22 +316,23 @@ export default function SignUpPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-[11px] font-semibold text-ink-soft mb-1">자녀 이름 *</label>
-                                        <input type="text" value={child.childName} onChange={(e) => handleChildChange(index, 'childName', e.target.value)} className="w-full px-3 py-1.5 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" placeholder="자녀 실명" required />
+                                        <label htmlFor={`child-${index}-name`} className="block text-[11px] font-semibold text-ink-soft mb-1">자녀 이름 *</label>
+                                        <input id={`child-${index}-name`} type="text" value={child.childName} onChange={(e) => handleChildChange(index, 'childName', e.target.value)} className="w-full px-3 py-1.5 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" placeholder="자녀 실명" required />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-2">
                                         <div>
-                                            <label className="block text-[11px] font-semibold text-ink-soft mb-1">자녀 성별 *</label>
-                                            <select value={child.gender} onChange={(e) => handleChildChange(index, 'gender', e.target.value)} className="w-full px-3 py-1.5 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" required>
+                                            <label htmlFor={`child-${index}-gender`} className="block text-[11px] font-semibold text-ink-soft mb-1">자녀 성별 *</label>
+                                            <select id={`child-${index}-gender`} value={child.gender} onChange={(e) => handleChildChange(index, 'gender', e.target.value)} className="w-full px-3 py-1.5 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" required>
                                                 <option value="">선택</option>
                                                 <option value="MALE">남학생</option>
                                                 <option value="FEMALE">여학생</option>
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-[11px] font-semibold text-ink-soft mb-1">자녀 생년월일 *</label>
+                                            <label htmlFor={`child-${index}-birthDate`} className="block text-[11px] font-semibold text-ink-soft mb-1">자녀 생년월일 *</label>
                                             <input
+                                                id={`child-${index}-birthDate`}
                                                 type="date"
                                                 value={child.birthDate}
                                                 onChange={(e) => handleChildChange(index, 'birthDate', e.target.value)}
@@ -341,13 +345,13 @@ export default function SignUpPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-[11px] font-semibold text-ink-soft mb-1">School 이름 *</label>
-                                        <input type="text" value={child.schoolName} onChange={(e) => handleChildChange(index, 'schoolName', e.target.value)} className="w-full px-3 py-1.5 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" placeholder="OO초등학교" required />
+                                        <label htmlFor={`child-${index}-schoolName`} className="block text-[11px] font-semibold text-ink-soft mb-1">School 이름 *</label>
+                                        <input id={`child-${index}-schoolName`} type="text" value={child.schoolName} onChange={(e) => handleChildChange(index, 'schoolName', e.target.value)} className="w-full px-3 py-1.5 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" placeholder="OO초등학교" required />
                                     </div>
 
                                     <div>
-                                        <label className="block text-[11px] font-semibold text-ink-soft mb-1">자녀 본인 연락처 (선택)</label>
-                                        <input type="tel" value={child.childPhone} onChange={(e) => handleChildChange(index, 'childPhone', e.target.value)} className="w-full px-3 py-1.5 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" placeholder="010-0000-0000" />
+                                        <label htmlFor={`child-${index}-phone`} className="block text-[11px] font-semibold text-ink-soft mb-1">자녀 본인 연락처 (선택)</label>
+                                        <input id={`child-${index}-phone`} type="tel" value={child.childPhone} onChange={(e) => handleChildChange(index, 'childPhone', e.target.value)} className="w-full px-3 py-1.5 border border-line rounded-md text-sm outline-none bg-paper-raised text-ink" placeholder="010-0000-0000" />
                                     </div>
                                 </div>
                             ))}
@@ -359,9 +363,9 @@ export default function SignUpPage() {
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-ink-soft mb-1">이메일 주소</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-ink-soft mb-1">이메일 주소</label>
                         <div className="flex gap-2">
-                            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="flex-1 px-4 py-2.5 border border-line rounded-md outline-none text-ink disabled:bg-line-soft" placeholder="example@com" required disabled={isAuthSent || isEmailVerified} />
+                            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="flex-1 px-4 py-2.5 border border-line rounded-md outline-none text-ink disabled:bg-line-soft" placeholder="example@com" required disabled={isAuthSent || isEmailVerified} />
                             <button type="button" onClick={handleSendAuthCode} disabled={!isEmailAvailable || isEmailVerified} className="px-3 text-xs font-semibold rounded-md bg-ink text-paper disabled:bg-line disabled:text-ink-faint whitespace-nowrap">
                                 {isAuthSent ? '재발송' : '인증요청'}
                             </button>
@@ -372,17 +376,17 @@ export default function SignUpPage() {
 
                     {isAuthSent && !isEmailVerified && (
                         <div>
-                            <label className="block text-sm font-medium text-ink-soft mb-1">인증번호 입력</label>
+                            <label htmlFor="authCode" className="block text-sm font-medium text-ink-soft mb-1">인증번호 입력</label>
                             <div className="flex gap-2">
-                                <input type="text" value={authCode} onChange={(e) => setAuthCode(e.target.value)} className="flex-1 px-4 py-2.5 border border-line rounded-md outline-none text-ink" placeholder="6자리 숫자" required />
+                                <input id="authCode" type="text" value={authCode} onChange={(e) => setAuthCode(e.target.value)} className="flex-1 px-4 py-2.5 border border-line rounded-md outline-none text-ink" placeholder="6자리 숫자" required />
                                 <button type="button" onClick={handleVerifyAuthCode} className="px-4 text-xs font-semibold rounded-md bg-accent text-paper-raised">확인</button>
                             </div>
                         </div>
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-ink-soft mb-1">비밀번호 (8자 이상)</label>
-                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2.5 border border-line rounded-md outline-none text-ink" placeholder="••••••••" required />
+                        <label htmlFor="signupPassword" className="block text-sm font-medium text-ink-soft mb-1">비밀번호 (8자 이상)</label>
+                        <input id="signupPassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2.5 border border-line rounded-md outline-none text-ink" placeholder="••••••••" required />
                     </div>
 
                     {errorMessage && <p className="text-danger text-sm font-medium">{errorMessage}</p>}

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { getErrorMessage } from './lib/httpError';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,12 +29,8 @@ export default function LoginPage() {
 
       router.push('/dashboard');
 
-    } catch (error: any) {
-      if (error.response && error.response.data) {
-        setErrorMessage(error.response.data.message || '로그인에 실패했습니다.');
-      } else {
-        setErrorMessage('서버와 통신 중 오류가 발생했습니다.');
-      }
+    } catch (error) {
+      setErrorMessage(getErrorMessage(error, '로그인에 실패했습니다.'));
     }
   };
 
@@ -47,8 +44,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleLogin} className="space-y-6 bg-paper-raised border border-line rounded-lg p-8">
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-2">아이디 (이메일 또는 연락처)</label>
+            <label htmlFor="loginId" className="block text-sm font-medium text-ink-soft mb-2">아이디 (이메일 또는 연락처)</label>
             <input
+                id="loginId"
                 type="text"
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value)}
@@ -59,8 +57,9 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-soft mb-2">비밀번호</label>
+            <label htmlFor="password" className="block text-sm font-medium text-ink-soft mb-2">비밀번호</label>
             <input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
