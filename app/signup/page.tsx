@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { useToast } from '../components/ToastProvider';
 import { getErrorMessage } from '../lib/httpError';
 
 interface Academy {
@@ -21,6 +22,7 @@ interface ChildForm {
 
 export default function SignUpPage() {
     const router = useRouter();
+    const { showToast } = useToast();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [name, setName] = useState('');
@@ -111,7 +113,7 @@ export default function SignUpPage() {
                 setAcademySearchMessage('검색 결과가 없습니다.');
             }
         } catch (error) {
-            alert('학원 검색 중 오류가 발생했습니다.');
+            showToast('학원 검색 중 오류가 발생했습니다.', 'error');
         } finally {
             setIsSearching(false);
         }
@@ -124,7 +126,7 @@ export default function SignUpPage() {
             setIsAuthSent(true);
             setErrorMessage('');
         } catch (error) {
-            alert(getErrorMessage(error, '인증번호 발송에 실패했습니다.'));
+            showToast(getErrorMessage(error, '인증번호 발송에 실패했습니다.'), 'error');
         }
     };
 
@@ -134,7 +136,7 @@ export default function SignUpPage() {
             setIsEmailVerified(true);
             setErrorMessage('');
         } catch (error) {
-            alert(getErrorMessage(error, '인증번호가 일치하지 않습니다.'));
+            showToast(getErrorMessage(error, '인증번호가 일치하지 않습니다.'), 'error');
         }
     };
 

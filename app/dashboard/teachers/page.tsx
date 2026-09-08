@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { useToast } from '../../components/ToastProvider';
 import { getErrorMessage } from '../../lib/httpError';
 
 interface TeacherMember {
@@ -14,8 +15,10 @@ interface TeacherMember {
 }
 
 export default function TeachersManagementPage() {
+    const { showToast } = useToast();
     const [teachersList, setTeachersList] = useState<TeacherMember[]>([]);
     const [isFetchingData, setIsFetchingData] = useState(false);
+    const [approvingUuid, setApprovingUuid] = useState<string | null>(null);
 
     useEffect(() => {
         fetchTeachers();
@@ -31,7 +34,7 @@ export default function TeachersManagementPage() {
             setTeachersList(response.data);
         } catch (error) {
             console.error('강사 리스트 패치 오류:', error);
-            alert(`[에러] ${getErrorMessage(error, '강사 목록을 불러오는 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '강사 목록을 불러오는 중 오류가 발생했습니다.'), 'error');
             setTeachersList([]);
         } finally {
             setIsFetchingData(false);
@@ -39,14 +42,18 @@ export default function TeachersManagementPage() {
     };
 
     const handleApproveTeacher = async (targetUuid: string) => {
+        if (approvingUuid) return; // 요청 처리 중 연타 방지
         if (!confirm('해당 선생님의 학원 가입을 승인하시겠습니까?')) return;
 
+        setApprovingUuid(targetUuid);
         try {
             await axios.patch(`/api/members/${targetUuid}/approve`, {});
-            alert('승인이 완료되었습니다.');
+            showToast('승인이 완료되었습니다.', 'success');
             fetchTeachers(); // 메뉴바 배지 갱신을 위해 리스트 재조회
         } catch (error) {
-            alert('승인 처리 중 오류가 발생했습니다.');
+            showToast(getErrorMessage(error, '승인 처리 중 오류가 발생했습니다.'), 'error');
+        } finally {
+            setApprovingUuid(null);
         }
     };
 
@@ -104,9 +111,10 @@ export default function TeachersManagementPage() {
                                             {!teacher.isApproved ? (
                                                 <button
                                                     onClick={() => handleApproveTeacher(teacher.uuid)}
-                                                    className="px-3 py-1.5 text-xs font-bold bg-accent hover:bg-accent-hover text-paper-raised rounded-lg shadow-sm transition active:scale-95"
+                                                    disabled={approvingUuid !== null}
+                                                    className="px-3 py-1.5 text-xs font-bold bg-accent hover:bg-accent-hover text-paper-raised rounded-lg shadow-sm transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
-                                                    가입 승인
+                                                    {approvingUuid === teacher.uuid ? '승인 중..' : '가입 승인'}
                                                 </button>
                                             ) : (
                                                 <span className="text-xs text-ink-faint font-medium select-none">승인 완료됨</span>
@@ -145,9 +153,10 @@ export default function TeachersManagementPage() {
                                         <div className="pt-2 border-t border-line-soft/70">
                                             <button
                                                 onClick={() => handleApproveTeacher(teacher.uuid)}
-                                                className="w-full py-2.5 text-xs font-bold bg-accent hover:bg-accent-hover text-paper-raised rounded-lg shadow-sm transition"
+                                                disabled={approvingUuid !== null}
+                                                className="w-full py-2.5 text-xs font-bold bg-accent hover:bg-accent-hover text-paper-raised rounded-lg shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
                                             >
-                                                가입 승인하기
+                                                {approvingUuid === teacher.uuid ? '승인 중..' : '가입 승인하기'}
                                             </button>
                                         </div>
                                     )}

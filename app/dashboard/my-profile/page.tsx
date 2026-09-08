@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { useToast } from '../../components/ToastProvider';
 import { getErrorMessage } from '../../lib/httpError';
+import { asArray } from '../../lib/typeGuards';
 
 interface MyProfile {
     uuid: string;
@@ -62,6 +64,7 @@ const getRoleLabel = (role: string) => {
 
 export default function MyProfilePage() {
     const router = useRouter();
+    const { showToast } = useToast();
     const [profile, setProfile] = useState<MyProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -150,16 +153,17 @@ export default function MyProfilePage() {
                 academyId: selectedAcademy.id,
                 schoolName: childForm.schoolName.trim(),
             });
-            alert(`${selectedAcademy.name}에 추가되었습니다. 해당 학원 원장/강사의 승인 후 시간표 배정이 가능합니다.`);
+            showToast(`${selectedAcademy.name}에 추가되었습니다. 해당 학원 원장/강사의 승인 후 시간표 배정이 가능합니다.`, 'success');
             setAcademyKeyword('');
             setAcademySearchResults([]);
             setSelectedAcademy(null);
             const res = await axios.get('/api/members/my-children/detail');
-            setChildren(res.data);
-            const updated = (res.data as MyChildDetail[]).find((c) => c.uuid === editingChildUuid);
+            const childrenList = asArray<MyChildDetail>(res.data);
+            setChildren(childrenList);
+            const updated = childrenList.find((c) => c.uuid === editingChildUuid);
             if (updated) setEditingChildAcademies(updated.academies);
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '학원 추가 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '학원 추가 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsAddingAcademy(false);
         }
@@ -172,7 +176,7 @@ export default function MyProfilePage() {
     const handleChildSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingChildUuid && !selectedAcademy) {
-            alert('자녀를 등록할 학원을 검색해서 선택해주세요.');
+            showToast('자녀를 등록할 학원을 검색해서 선택해주세요.', 'error');
             return;
         }
         try {
@@ -187,15 +191,15 @@ export default function MyProfilePage() {
 
             if (editingChildUuid) {
                 await axios.patch(`/api/members/my-children/${editingChildUuid}`, payload);
-                alert('자녀 정보가 수정되었습니다.');
+                showToast('자녀 정보가 수정되었습니다.', 'success');
             } else {
                 await axios.post('/api/members/my-children', { ...payload, academyId: selectedAcademy!.id });
-                alert('자녀가 추가되었습니다. 원장/강사의 승인 후 정상 이용할 수 있습니다.');
+                showToast('자녀가 추가되었습니다. 원장/강사의 승인 후 정상 이용할 수 있습니다.', 'success');
             }
             setIsChildModalOpen(false);
             fetchMyChildren();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '자녀 정보 저장 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '자녀 정보 저장 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingChild(false);
         }
@@ -214,7 +218,7 @@ export default function MyProfilePage() {
             }
         } catch (error) {
             console.error('내 정보 조회 실패:', error);
-            alert('내 정보를 불러오는 중 오류가 발생했습니다.');
+            showToast('내 정보를 불러오는 중 오류가 발생했습니다.', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -225,7 +229,7 @@ export default function MyProfilePage() {
 
         const wantsPasswordChange = newPassword.trim() !== '' || currentPassword.trim() !== '';
         if (wantsPasswordChange && newPassword !== newPasswordConfirm) {
-            alert('새 비밀번호와 새 비밀번호 확인이 일치하지 않습니다.');
+            showToast('새 비밀번호와 새 비밀번호 확인이 일치하지 않습니다.', 'error');
             return;
         }
 
@@ -244,10 +248,10 @@ export default function MyProfilePage() {
             setCurrentPassword('');
             setNewPassword('');
             setNewPasswordConfirm('');
-            alert('회원 정보가 수정되었습니다.');
+            showToast('회원 정보가 수정되었습니다.', 'success');
             router.refresh();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '회원 정보 수정 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '회원 정보 수정 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmitting(false);
         }

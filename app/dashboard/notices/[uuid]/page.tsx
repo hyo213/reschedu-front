@@ -4,6 +4,8 @@ import { useEffect, useState, use } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import axios from 'axios';
 import CommonMenuBar from '../../components/commonMenuBar';
+import { useToast } from '../../../components/ToastProvider';
+import { getErrorMessage } from '../../../lib/httpError';
 
 interface NoticeDetail {
     uuid: string;
@@ -34,6 +36,7 @@ function formatDateTime(iso: string): string {
 export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: string }> }) {
     const router = useRouter();
     const searchParams = useSearchParams();
+    const { showToast } = useToast();
     const { uuid } = use(params);
     // academyId는 쿼리로 전달(학부모가 자녀 학원의 공지를 볼 수도 있음), 없으면 세션 값 사용.
     // sessionStorage는 클라이언트 전용이라 렌더 바디가 아닌 fetch 시점에만 읽는다.
@@ -102,8 +105,7 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
             setNotice(res.data);
             setIsEditing(false);
         } catch (error) {
-            const msg = axios.isAxiosError(error) ? error.response?.data?.message : null;
-            alert(msg || '공지 수정 중 오류가 발생했습니다.');
+            showToast(getErrorMessage(error, '공지 수정 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSaving(false);
         }
@@ -116,8 +118,7 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
             await axios.delete(`/api/notices/${uuid}?academyId=${academyId}`);
             router.push('/dashboard/notices');
         } catch (error) {
-            const msg = axios.isAxiosError(error) ? error.response?.data?.message : null;
-            alert(msg || '공지 삭제 중 오류가 발생했습니다.');
+            showToast(getErrorMessage(error, '공지 삭제 중 오류가 발생했습니다.'), 'error');
         }
     };
 

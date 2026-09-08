@@ -3,12 +3,14 @@
 import { useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import { useToast } from './ToastProvider';
 
 // 로그인 토큰이 httpOnly 쿠키로 발급되므로 모든 axios 요청에 쿠키를 함께 보내도록 전역 설정
 axios.defaults.withCredentials = true;
 
 export default function AxiosInterceptorProvider() {
     const router = useRouter();
+    const { showToast } = useToast();
 
     useEffect(() => {
         // 여러 API 호출이 동시에 401/403을 받아도 알림+이동은 단 한 번만 실행되도록 방지
@@ -25,7 +27,7 @@ export default function AxiosInterceptorProvider() {
                 if ((status === 401 || status === 403) && !sessionExpiredHandled) {
                     sessionExpiredHandled = true;
                     sessionStorage.clear();
-                    alert('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.');
+                    showToast('로그인 세션이 만료되었습니다. 다시 로그인해 주세요.', 'error');
                     router.push('/');
                 }
                 return Promise.reject(error);
@@ -35,7 +37,7 @@ export default function AxiosInterceptorProvider() {
         return () => {
             axios.interceptors.response.eject(interceptorId);
         };
-    }, [router]);
+    }, [router, showToast]);
 
     return null;
 }

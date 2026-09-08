@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { useToast } from '../../components/ToastProvider';
 import { getErrorMessage } from '../../lib/httpError';
+import { asArray } from '../../lib/typeGuards';
 
 const DAY_LABELS: Record<string, string> = {
     MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목',
@@ -76,6 +78,7 @@ interface StudentTicketCount {
 const API_BASE = '/api';
 
 export default function MakeupMatchPage() {
+    const { showToast } = useToast();
     const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => getMonday(new Date()));
     const [slots, setSlots] = useState<MakeupSlot[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -117,7 +120,7 @@ export default function MakeupMatchPage() {
         try {
             const academyId = sessionStorage.getItem('academyId');
             const res = await axios.get(`${API_BASE}/makeup-tickets/counts?academyId=${academyId}`);
-            setTicketHolders((res.data as StudentTicketCount[]).filter((s) => s.remainingTicketCount > 0));
+            setTicketHolders(asArray<StudentTicketCount>(res.data).filter((s) => s.remainingTicketCount > 0));
         } catch (error) {
             console.error('보강권 보유 학생 조회 실패:', error);
         }
@@ -130,7 +133,7 @@ export default function MakeupMatchPage() {
 
     const handleSubmitMatch = async () => {
         if (!matchTarget || !selectedStudentUuid) {
-            alert('매칭할 학생을 선택해주세요.');
+            showToast('매칭할 학생을 선택해주세요.', 'error');
             return;
         }
         const student = ticketHolders.find((s) => s.studentUuid === selectedStudentUuid);
@@ -143,12 +146,12 @@ export default function MakeupMatchPage() {
                 `${API_BASE}/makeup-requests/match?academyId=${academyId}`,
                 { studentUuid: selectedStudentUuid, targetRegularClassUuid: matchTarget.regularClassUuid, targetDate: matchTarget.date }
             );
-            alert('보강 매칭이 완료되었습니다.');
+            showToast('보강 매칭이 완료되었습니다.', 'success');
             setMatchTarget(null);
             fetchSlots();
             fetchTicketHolders();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '보강 매칭 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '보강 매칭 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmitting(false);
         }

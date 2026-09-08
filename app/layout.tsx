@@ -4,6 +4,7 @@ import { IBM_Plex_Serif, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import AxiosInterceptorProvider from "./components/AxiosInterceptorProvider";
 import NotificationListener from "./components/NotificationListener";
+import { ToastProvider } from "./components/ToastProvider";
 
 const pretendard = localFont({
   src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
@@ -42,9 +43,11 @@ export default function RootLayout({
       className={`${pretendard.variable} ${plexSerif.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-paper text-ink font-body">
-        <AxiosInterceptorProvider />
-        <NotificationListener />
-        {children}
+        <ToastProvider>
+          <AxiosInterceptorProvider />
+          <NotificationListener />
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

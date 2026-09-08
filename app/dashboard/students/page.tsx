@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { useToast } from '../../components/ToastProvider';
 import { getErrorMessage } from '../../lib/httpError';
 
 interface ScheduleSummary {
@@ -118,8 +119,10 @@ const initialManualForm = {
 
 export default function StudentsManagementPage() {
     const router = useRouter();
+    const { showToast } = useToast();
     const [studentsList, setStudentsList] = useState<StudentMember[]>([]);
     const [isFetchingData, setIsFetchingData] = useState(false);
+    const [approvingUuid, setApprovingUuid] = useState<string | null>(null);
 
     const [myRole, setMyRole] = useState('');
     const [teachersOptions, setTeachersOptions] = useState<TeacherOption[]>([]);
@@ -221,26 +224,30 @@ export default function StudentsManagementPage() {
 
             await axios.post(`${API_BASE}/members/students/manual?academyId=${academyId}`, requestBody);
 
-            alert('수강생이 승인 완료 상태로 등록되었습니다.');
+            showToast('수강생이 승인 완료 상태로 등록되었습니다.', 'success');
             setIsAddModalOpen(false);
             setManualForm(initialManualForm);
             fetchStudents();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '수강생 등록 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '수강생 등록 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmitting(false);
         }
     };
 
     const handleApproveStudent = async (targetUuid: string) => {
+        if (approvingUuid) return; // 요청 처리 중 연타 방지
         if (!confirm('해당 수강생(및 보호자 계정)의 가입을 승인하시겠습니까?')) return;
 
+        setApprovingUuid(targetUuid);
         try {
             await axios.patch(`${API_BASE}/members/${targetUuid}/approve`, {});
-            alert('승인이 완료되었습니다.');
+            showToast('승인이 완료되었습니다.', 'success');
             fetchStudents();
         } catch (error) {
-            alert('승인 처리 중 오류가 발생했습니다.');
+            showToast(getErrorMessage(error, '승인 처리 중 오류가 발생했습니다.'), 'error');
+        } finally {
+            setApprovingUuid(null);
         }
     };
 
@@ -268,11 +275,11 @@ export default function StudentsManagementPage() {
                     enrollmentEndDate: periodForm.enrollmentEndDate || null,
                 }
             );
-            alert('수강 기간이 저장되었습니다.');
+            showToast('수강 기간이 저장되었습니다.', 'success');
             setPeriodTarget(null);
             fetchStudents();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '수강 기간 저장 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '수강 기간 저장 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingPeriod(false);
         }
@@ -300,10 +307,10 @@ export default function StudentsManagementPage() {
                     enrollmentEndDate: newEndDate,
                 }
             );
-            alert(`수강기간이 ${newEndDate}까지 연장되었습니다.`);
+            showToast(`수강기간이 ${newEndDate}까지 연장되었습니다.`, 'success');
             fetchStudents();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '수강기간 연장 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '수강기간 연장 중 오류가 발생했습니다.'), 'error');
         }
     };
 
@@ -461,9 +468,10 @@ export default function StudentsManagementPage() {
                                                         <button
                                                             type="button"
                                                             onClick={(e) => { e.stopPropagation(); handleApproveStudent(student.uuid); }}
-                                                            className="px-3 py-1.5 text-xs font-bold bg-accent hover:bg-accent-hover text-paper-raised rounded-lg shadow-sm transition active:scale-95"
+                                                            disabled={approvingUuid !== null}
+                                                            className="px-3 py-1.5 text-xs font-bold bg-accent hover:bg-accent-hover text-paper-raised rounded-lg shadow-sm transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                                         >
-                                                            가입 승인
+                                                            {approvingUuid === student.uuid ? '승인 중..' : '가입 승인'}
                                                         </button>
                                                     )}
                                                     <button
@@ -569,9 +577,10 @@ export default function StudentsManagementPage() {
                                                 <button
                                                     type="button"
                                                     onClick={(e) => { e.stopPropagation(); handleApproveStudent(student.uuid); }}
-                                                    className="flex-1 py-2.5 text-xs font-bold bg-accent hover:bg-accent-hover text-paper-raised rounded-lg shadow-sm transition"
+                                                    disabled={approvingUuid !== null}
+                                                    className="flex-1 py-2.5 text-xs font-bold bg-accent hover:bg-accent-hover text-paper-raised rounded-lg shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
-                                                    가입 승인하기
+                                                    {approvingUuid === student.uuid ? '승인 중..' : '가입 승인하기'}
                                                 </button>
                                             )}
                                             <button

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import CommonMenuBar from './components/commonMenuBar';
+import { asArray } from '../lib/typeGuards';
 
 interface ApprovableItem {
     isApproved: boolean;
@@ -62,7 +63,7 @@ export default function DashboardPage() {
                 ? '/api/notices/my-children-active'
                 : `/api/notices/active?academyId=${sessionStorage.getItem('academyId')}`;
             const res = await axios.get(url);
-            setRecentNotices((res.data as NoticeSummary[]).slice(0, 3));
+            setRecentNotices(asArray<NoticeSummary>(res.data).slice(0, 3));
         } catch (error) {
             console.error('대시보드 공지사항 조회 실패:', error);
         }
@@ -112,11 +113,11 @@ export default function DashboardPage() {
 
             const [studentsRes, teachersRes] = await Promise.all(requests);
 
-            const pendingStudents = (studentsRes.data as ApprovableItem[]).filter((s) => !s.isApproved).length;
+            const pendingStudents = asArray<ApprovableItem>(studentsRes.data).filter((s) => !s.isApproved).length;
             setPendingStudentCount(pendingStudents);
 
             if (teachersRes) {
-                const pendingTeachers = (teachersRes.data as ApprovableItem[]).filter((t) => !t.isApproved).length;
+                const pendingTeachers = asArray<ApprovableItem>(teachersRes.data).filter((t) => !t.isApproved).length;
                 setPendingTeacherCount(pendingTeachers);
             }
         } catch (error) {

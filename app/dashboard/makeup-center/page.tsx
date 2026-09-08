@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { useToast } from '../../components/ToastProvider';
 import { getErrorMessage, getErrorData, isErrorStatus } from '../../lib/httpError';
 
 interface StudentTicketCount {
@@ -60,6 +61,7 @@ interface MakeupRequestItem {
 }
 
 export default function MakeupCenterPage() {
+    const { showToast } = useToast();
     const [myRole, setMyRole] = useState('');
     const [counts, setCounts] = useState<StudentTicketCount[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -127,10 +129,10 @@ export default function MakeupCenterPage() {
                 defaultValidityDays: policyForm.defaultValidityUnlimited ? null : Number(policyForm.defaultValidityDays),
             });
             setPolicy(res.data);
-            alert('보강권 전체 정책이 저장되었습니다.');
+            showToast('보강권 전체 정책이 저장되었습니다.', 'success');
             setIsPolicyModalOpen(false);
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '정책 저장 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '정책 저장 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingPolicy(false);
         }
@@ -160,11 +162,11 @@ export default function MakeupCenterPage() {
                 `/api/makeup-requests/${request.uuid}/${decision}?academyId=${academyId}`,
                 {}
             );
-            alert(`보강 신청이 ${label}되었습니다.`);
+            showToast(`보강 신청이 ${label}되었습니다.`, 'success');
             await fetchPendingRequests();
             fetchCounts(); // 수락 시 티켓이 사용 처리되어 잔여 개수가 바뀌므로 함께 갱신
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, `보강 신청 ${label} 중 오류가 발생했습니다.`)}`);
+            showToast(getErrorMessage(error, `보강 신청 ${label} 중 오류가 발생했습니다.`), 'error');
         } finally {
             setDecidingRequestUuid(null);
         }
@@ -234,7 +236,7 @@ export default function MakeupCenterPage() {
                     overrideLimit,
                 }
             );
-            alert('보강권이 지급되었습니다.');
+            showToast('보강권이 지급되었습니다.', 'success');
             setIsGrantModalOpen(false);
             // 지급된 학생의 상세 내역이 이미 펼쳐져 있었다면 최신 상태로 다시 불러오도록 캐시를 비운다.
             setDetailsByStudent((prev) => {
@@ -252,7 +254,7 @@ export default function MakeupCenterPage() {
                 }
                 return;
             }
-            alert(`[에러] ${getErrorMessage(error, '보강권 지급 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '보강권 지급 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingGrant(false);
         }
@@ -261,12 +263,12 @@ export default function MakeupCenterPage() {
     const handleSubmitGrant = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!grantForm.studentUuid) {
-            alert('보강권을 지급할 학생을 선택해주세요.');
+            showToast('보강권을 지급할 학생을 선택해주세요.', 'error');
             return;
         }
         const student = counts.find((c) => c.studentUuid === grantForm.studentUuid);
         if (!grantForm.unlimited && !grantForm.validityDays) {
-            alert('유효기간을 입력하거나 "기한 제한 없음"을 체크해주세요.');
+            showToast('유효기간을 입력하거나 "기한 제한 없음"을 체크해주세요.', 'error');
             return;
         }
         if (!confirm(`${student?.managementName || student?.name}에게 보강권 ${grantForm.quantity}개를 지급하시겠습니까?`)) return;

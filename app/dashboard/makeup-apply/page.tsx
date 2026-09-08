@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { useToast } from '../../components/ToastProvider';
 import { getErrorMessage } from '../../lib/httpError';
 
 const DAY_LABELS: Record<string, string> = {
@@ -137,6 +138,7 @@ interface AcademyOption {
 const API_BASE = '/api';
 
 export default function MakeupApplyPage() {
+    const { showToast } = useToast();
     const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => getMonday(new Date()));
     const [slots, setSlots] = useState<MakeupSlot[]>([]);
     const [isLoadingSlots, setIsLoadingSlots] = useState(false);
@@ -255,7 +257,7 @@ export default function MakeupApplyPage() {
 
     const handleSubmitApply = async () => {
         if (!applyTarget || !selectedChildUuid) {
-            alert('보강 신청할 자녀를 선택해주세요.');
+            showToast('보강 신청할 자녀를 선택해주세요.', 'error');
             return;
         }
         if (!confirm(`${applyTarget.date} ${applyTarget.startTime.slice(0, 5)}~${applyTarget.endTime.slice(0, 5)} 수업으로 보강 신청하시겠습니까?\n보유한 보강권 1개가 사용됩니다(원장/강사 수락 시 확정).`)) return;
@@ -266,13 +268,13 @@ export default function MakeupApplyPage() {
                 `${API_BASE}/makeup-requests`,
                 { studentUuid: selectedChildUuid, targetRegularClassUuid: applyTarget.regularClassUuid, targetDate: applyTarget.date }
             );
-            alert('보강 신청이 접수되었습니다. 원장/강사의 수락을 기다려주세요.');
+            showToast('보강 신청이 접수되었습니다. 원장/강사의 수락을 기다려주세요.', 'success');
             setApplyTarget(null);
             fetchSlots();
             fetchMyRequests();
             fetchChildTicketCounts(); // 방금 신청에 쓴 보강권이 "사용 가능" 목록에서 즉시 빠지도록 갱신
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '보강 신청 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '보강 신청 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmitting(false);
         }

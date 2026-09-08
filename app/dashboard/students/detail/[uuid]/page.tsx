@@ -4,6 +4,7 @@ import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import CommonMenuBar from '../../../components/commonMenuBar';
+import { useToast } from '../../../../components/ToastProvider';
 import { getErrorMessage } from '../../../../lib/httpError';
 
 const API_BASE = '/api';
@@ -56,6 +57,7 @@ function formatClassLabel(cls: { title: string | null; teacherName: string; time
 
 export default function StudentDetailPage({ params }: { params: Promise<{ uuid: string }> }) {
     const router = useRouter();
+    const { showToast } = useToast();
     const { uuid } = use(params);
 
     const [isLoading, setIsLoading] = useState(true);
@@ -189,16 +191,16 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
     const handleScheduleChangeSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (scheduleForm.timeSlots.length === 0) {
-            alert('수업 요일을 최소 1개 이상 선택해주세요.');
+            showToast('수업 요일을 최소 1개 이상 선택해주세요.', 'error');
             return;
         }
         if (!scheduleForm.teacherUuid) {
-            alert('담당 강사를 선택해주세요.');
+            showToast('담당 강사를 선택해주세요.', 'error');
             return;
         }
         const invalidSlot = scheduleForm.timeSlots.find((s) => s.startTime >= s.endTime);
         if (invalidSlot) {
-            alert(`${DAY_LABELS[invalidSlot.dayOfWeek]}요일의 종료 시간은 시작 시간보다 이후여야 합니다.`);
+            showToast(`${DAY_LABELS[invalidSlot.dayOfWeek]}요일의 종료 시간은 시작 시간보다 이후여야 합니다.`, 'error');
             return;
         }
         if (!confirm(`${scheduleForm.effectiveFrom}부터 적용되도록 새 스케줄로 배정하시겠습니까?`)) return;
@@ -222,11 +224,11 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
                 }
             );
 
-            alert('수업 스케줄이 변경되었습니다. 같은 강사님의 같은 요일·시간에 이미 진행 중인 반이 있었다면 그 반에 합류되었습니다. [시간표 관리] 화면에도 즉시 반영됩니다.');
+            showToast('수업 스케줄이 변경되었습니다. 같은 강사님의 같은 요일·시간에 이미 진행 중인 반이 있었다면 그 반에 합류되었습니다. [시간표 관리] 화면에도 즉시 반영됩니다.', 'success');
             setScheduleForm({ ...initialScheduleForm, teacherUuid: myRole === 'TEACHER' ? scheduleForm.teacherUuid : '' });
             fetchScheduleHistory();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '스케줄 변경 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '스케줄 변경 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingSchedule(false);
         }
@@ -273,7 +275,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
 
         } catch (error) {
             console.error('상세정보 조회 실패:', error);
-            alert('데이터를 가져오는데 실패했습니다.');
+            showToast('데이터를 가져오는데 실패했습니다.', 'error');
             router.push('/dashboard/students');
         } finally {
             setIsLoading(false);
@@ -304,10 +306,10 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
 
             await axios.put(`${API_BASE}/members/students/${uuid}?academyId=${academyId}`, requestBody);
 
-            alert('수강생 정보가 성공적으로 변경되었습니다.');
+            showToast('수강생 정보가 성공적으로 변경되었습니다.', 'success');
             await loadInitialData();
         } catch (error) {
-            alert('정보 수정 중 서버 오류가 발생했습니다.');
+            showToast(getErrorMessage(error, '정보 수정 중 서버 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSaving(false);
         }
@@ -331,7 +333,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
             setIsTeacherHandoverModalOpen(false);
             await loadInitialData();
         } catch (error) {
-            alert(getErrorMessage(error, '담당 강사 변경 중 오류가 발생했습니다.'));
+            showToast(getErrorMessage(error, '담당 강사 변경 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingHandover(false);
         }
@@ -345,7 +347,7 @@ export default function StudentDetailPage({ params }: { params: Promise<{ uuid: 
     const handleTeacherHandoverSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!handoverForm.newTeacherUuid) {
-            alert('새 담당 강사를 선택해주세요.');
+            showToast('새 담당 강사를 선택해주세요.', 'error');
             return;
         }
         if (!confirm(`${handoverForm.effectiveFrom}부터 담당 강사를 변경하시겠습니까?`)) return;

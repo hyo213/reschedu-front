@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { useToast } from '../../components/ToastProvider';
+import { getErrorMessage } from '../../lib/httpError';
 
 interface NoticeItem {
     uuid: string;
@@ -47,6 +49,7 @@ function formatDate(iso: string): string {
 
 export default function NoticeListPage() {
     const router = useRouter();
+    const { showToast } = useToast();
     const [myRole, setMyRole] = useState('');
     const [notices, setNotices] = useState<NoticeItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -133,8 +136,7 @@ export default function NoticeListPage() {
             setIsModalOpen(false);
             fetchNotices(myRole, selectedAcademyId);
         } catch (error) {
-            const msg = axios.isAxiosError(error) ? error.response?.data?.message : null;
-            alert(msg || '공지 작성 중 오류가 발생했습니다.');
+            showToast(getErrorMessage(error, '공지 작성 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSaving(false);
         }

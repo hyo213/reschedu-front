@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import CommonMenuBar from '../components/commonMenuBar';
+import { useToast } from '../../components/ToastProvider';
 import { getErrorMessage, getErrorData, isErrorStatus } from '../../lib/httpError';
+import { asArray } from '../../lib/typeGuards';
 
 const DAY_LABELS: Record<string, string> = {
     MONDAY: '월', TUESDAY: '화', WEDNESDAY: '수', THURSDAY: '목',
@@ -167,6 +169,7 @@ const initialForm = {
 const API_BASE = '/api';
 
 export default function RegularClassesPage() {
+    const { showToast } = useToast();
     const [myRole, setMyRole] = useState('');
     const [classes, setClasses] = useState<RegularClassItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -308,7 +311,7 @@ export default function RegularClassesPage() {
                 requests.push(axios.get(`${API_BASE}/members/teachers?academyId=${academyId}`));
             }
             const [studentsRes, teachersRes] = await Promise.all(requests);
-            setStudentsOptions((studentsRes.data as StudentOption[]).filter((s) => s.isApproved));
+            setStudentsOptions(asArray<StudentOption>(studentsRes.data).filter((s) => s.isApproved));
             if (teachersRes) setTeachersOptions(teachersRes.data);
         } catch (error) {
             console.error('시간표 등록 폼 데이터 로딩 실패:', error);
@@ -394,16 +397,16 @@ export default function RegularClassesPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (form.timeSlots.length === 0) {
-            alert('수업 요일을 최소 1개 이상 선택해주세요.');
+            showToast('수업 요일을 최소 1개 이상 선택해주세요.', 'error');
             return;
         }
         if (!form.teacherUuid) {
-            alert('담당 강사를 선택해주세요.');
+            showToast('담당 강사를 선택해주세요.', 'error');
             return;
         }
         const invalidSlot = form.timeSlots.find((s) => s.startTime >= s.endTime);
         if (invalidSlot) {
-            alert(`${DAY_LABELS[invalidSlot.dayOfWeek]}요일의 종료 시간은 시작 시간보다 이후여야 합니다.`);
+            showToast(`${DAY_LABELS[invalidSlot.dayOfWeek]}요일의 종료 시간은 시작 시간보다 이후여야 합니다.`, 'error');
             return;
         }
 
@@ -425,19 +428,19 @@ export default function RegularClassesPage() {
                     `${API_BASE}/regular-classes/${editingClass.uuid}?academyId=${academyId}`,
                     payload
                 );
-                alert('시간표가 수정되었습니다.');
+                showToast('시간표가 수정되었습니다.', 'success');
             } else {
                 await axios.post(
                     `${API_BASE}/regular-classes?academyId=${academyId}`,
                     payload
                 );
-                alert('시간표가 등록되었습니다.');
+                showToast('시간표가 등록되었습니다.', 'success');
             }
 
             setIsModalOpen(false);
             fetchClasses();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '시간표 저장 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '시간표 저장 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmitting(false);
         }
@@ -453,7 +456,7 @@ export default function RegularClassesPage() {
     const handleChangeTeacherSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingClass || !changeTeacherForm.newTeacherUuid) {
-            alert('새로 배정할 강사를 선택해주세요.');
+            showToast('새로 배정할 강사를 선택해주세요.', 'error');
             return;
         }
         if (!confirm(`${changeTeacherForm.effectiveFrom}부터 담당 강사를 변경하시겠습니까? 그 반의 현재 수강생 전원이 새 강사의 같은 요일·시간 반으로 이관됩니다.`)) return;
@@ -465,12 +468,12 @@ export default function RegularClassesPage() {
                 `${API_BASE}/regular-classes/${editingClass.uuid}/change-teacher?academyId=${academyId}`,
                 changeTeacherForm
             );
-            alert('담당 강사가 변경되었습니다. 지정한 날짜부터 시간표에 반영됩니다.');
+            showToast('담당 강사가 변경되었습니다. 지정한 날짜부터 시간표에 반영됩니다.', 'success');
             setIsChangeTeacherModalOpen(false);
             setIsModalOpen(false);
             fetchClasses();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '담당 강사 변경 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '담당 강사 변경 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingTeacherChange(false);
         }
@@ -494,12 +497,12 @@ export default function RegularClassesPage() {
                 `${API_BASE}/regular-classes/${editingClass.uuid}/discontinue?academyId=${academyId}`,
                 { effectiveFrom: discontinueEffectiveFrom }
             );
-            alert('반 종료가 예약되었습니다. 지정한 날짜부터 시간표·보강매칭에서 사라집니다.');
+            showToast('반 종료가 예약되었습니다. 지정한 날짜부터 시간표·보강매칭에서 사라집니다.', 'success');
             setIsDiscontinueModalOpen(false);
             setIsModalOpen(false);
             fetchClasses();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '반 종료 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '반 종료 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingDiscontinue(false);
         }
@@ -513,11 +516,11 @@ export default function RegularClassesPage() {
             setIsSubmittingDelete(true);
             const academyId = sessionStorage.getItem('academyId');
             await axios.delete(`${API_BASE}/regular-classes/${editingClass.uuid}?academyId=${academyId}`);
-            alert('반이 삭제되었습니다.');
+            showToast('반이 삭제되었습니다.', 'success');
             setIsModalOpen(false);
             fetchClasses();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '반 삭제 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '반 삭제 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingDelete(false);
         }
@@ -550,7 +553,7 @@ export default function RegularClassesPage() {
     const handleAddHoliday = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newHolidayDate) {
-            alert('휴무일 날짜를 선택해주세요.');
+            showToast('휴무일 날짜를 선택해주세요.', 'error');
             return;
         }
         try {
@@ -560,14 +563,14 @@ export default function RegularClassesPage() {
                 `${API_BASE}/academy-holidays?academyId=${academyId}`,
                 { date: newHolidayDate, reason: newHolidayReason.trim() || null, issueMakeupTickets: newHolidayIssueMakeupTickets }
             );
-            alert(`휴무일이 등록되었습니다. (자동 발급된 보강권: ${res.data.issuedTicketCount ?? 0}개)`);
+            showToast(`휴무일이 등록되었습니다. (자동 발급된 보강권: ${res.data.issuedTicketCount ?? 0}개)`, 'success');
             setNewHolidayDate('');
             setNewHolidayReason('');
             setNewHolidayIssueMakeupTickets(true);
             await fetchHolidays();
             fetchClasses();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '휴무일 등록 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '휴무일 등록 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingHoliday(false);
         }
@@ -578,11 +581,11 @@ export default function RegularClassesPage() {
         try {
             const academyId = sessionStorage.getItem('academyId');
             const res = await axios.delete(`${API_BASE}/academy-holidays/${holiday.uuid}?academyId=${academyId}`);
-            alert(`휴무일이 삭제되었습니다. (회수된 보강권: ${res.data.retractedTicketCount ?? 0}개)`);
+            showToast(`휴무일이 삭제되었습니다. (회수된 보강권: ${res.data.retractedTicketCount ?? 0}개)`, 'success');
             await fetchHolidays();
             fetchClasses();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '휴무일 삭제 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '휴무일 삭제 중 오류가 발생했습니다.'), 'error');
         }
     };
 
@@ -602,12 +605,12 @@ export default function RegularClassesPage() {
                 `${API_BASE}/academy-holidays/${holidayDetailTarget.uuid}?academyId=${academyId}`,
                 { reason: editHolidayReasonInput.trim() || null }
             );
-            alert('휴무 사유가 수정되었습니다.');
+            showToast('휴무 사유가 수정되었습니다.', 'success');
             setHolidayDetailTarget(null);
             await fetchHolidays();
             fetchClasses();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '휴무 사유 수정 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '휴무 사유 수정 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSavingHolidayReason(false);
         }
@@ -622,12 +625,12 @@ export default function RegularClassesPage() {
             const res = await axios.delete(
                 `${API_BASE}/academy-holidays/${holidayDetailTarget.uuid}?academyId=${academyId}`
             );
-            alert(`휴무일 지정이 취소되었습니다. (회수된 보강권: ${res.data.retractedTicketCount ?? 0}개)`);
+            showToast(`휴무일 지정이 취소되었습니다. (회수된 보강권: ${res.data.retractedTicketCount ?? 0}개)`, 'success');
             setHolidayDetailTarget(null);
             await fetchHolidays();
             fetchClasses();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '휴무일 취소 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '휴무일 취소 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsCancellingHolidayFromGrid(false);
         }
@@ -665,12 +668,12 @@ export default function RegularClassesPage() {
             await axios.delete(`${API_BASE}/makeup-tickets/absence`, {
                 data: { studentUuid, regularClassUuid: cls.uuid, absentDate: date },
             });
-            alert('결석 신청이 취소되었습니다.');
+            showToast('결석 신청이 취소되었습니다.', 'success');
             setAbsenceTarget(null);
             setBlockActionTarget(null);
             fetchClasses();
         } catch (error) {
-            alert(`[에러] ${getErrorMessage(error, '결석 신청 취소 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '결석 신청 취소 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsCancellingAbsence(null);
         }
@@ -687,7 +690,7 @@ export default function RegularClassesPage() {
 
     const handleSubmitAbsence = async (overrideLimit: boolean = false) => {
         if (!absenceTarget || !selectedChildUuid) {
-            alert('결석 처리할 수강생을 선택해주세요.');
+            showToast('결석 처리할 수강생을 선택해주세요.', 'error');
             return;
         }
         if (!overrideLimit && !confirm(`${absenceTarget.date}의 수업을 결석 처리하시겠습니까?\n처리 시 보강권이 1개 자동 발급됩니다.`)) return;
@@ -698,7 +701,7 @@ export default function RegularClassesPage() {
                 `${API_BASE}/makeup-tickets/absence`,
                 { studentUuid: selectedChildUuid, regularClassUuid: absenceTarget.cls.uuid, absentDate: absenceTarget.date, overrideLimit }
             );
-            alert('결석 처리가 완료되었습니다. 보강권 1개가 발급되었습니다.');
+            showToast('결석 처리가 완료되었습니다. 보강권 1개가 발급되었습니다.', 'success');
             setAbsenceTarget(null);
             setBlockActionTarget(null);
             fetchClasses();
@@ -711,7 +714,7 @@ export default function RegularClassesPage() {
                 }
                 return;
             }
-            alert(`[에러] ${getErrorMessage(error, '결석 처리 중 오류가 발생했습니다.')}`);
+            showToast(getErrorMessage(error, '결석 처리 중 오류가 발생했습니다.'), 'error');
         } finally {
             setIsSubmittingAbsence(false);
         }
