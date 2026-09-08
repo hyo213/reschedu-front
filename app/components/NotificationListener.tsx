@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface NotificationEventPayload {
-    type: 'MAKEUP_TICKET_ISSUED' | 'MAKEUP_MATCH_CANCELLED' | 'TEACHER_SIGNUP_PENDING' | 'STUDENT_ENROLLMENT_PENDING';
+    type: 'MAKEUP_TICKET_ISSUED' | 'MAKEUP_MATCH_CANCELLED' | 'TEACHER_SIGNUP_PENDING' | 'STUDENT_ENROLLMENT_PENDING' | 'MAKEUP_REQUEST_PENDING';
     message: string;
     linkPath: string;
 }
@@ -25,6 +25,7 @@ const TYPE_ICON: Record<NotificationEventPayload['type'], string> = {
     MAKEUP_MATCH_CANCELLED: '↩️',
     TEACHER_SIGNUP_PENDING: '🧑‍🏫',
     STUDENT_ENROLLMENT_PENDING: '🧒',
+    MAKEUP_REQUEST_PENDING: '📝',
 };
 
 export default function NotificationListener() {
