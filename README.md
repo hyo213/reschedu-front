@@ -1,6 +1,6 @@
 # ReschEdu Frontend
 
-학원 시간표/보강 관리 서비스 프론트엔드. 원장·강사·학부모 세 역할이 같은 앱을 다르게 씀.
+학원 시간표/보강 관리 서비스 프론트엔드입니다. 원장·강사·학부모 세 역할이 같은 앱을 다르게 씁니다.
 
 - 백엔드: https://github.com/hyo213/reschedu-back
 - Next.js 16(App Router, Turbopack) · TypeScript · Tailwind CSS · axios
@@ -28,7 +28,7 @@
 
 ## 실행 방법
 
-백엔드(`localhost:8080`) 먼저 실행.
+백엔드(`localhost:8080`)를 먼저 실행합니다.
 
 ```bash
 npm install
