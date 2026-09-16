@@ -9,6 +9,7 @@ import { getErrorMessage } from '../../../lib/httpError';
 
 interface NoticeDetail {
     uuid: string;
+    academyName: string;
     title: string;
     content: string;
     authorName: string;
@@ -140,7 +141,12 @@ export default function NoticeDetailPage({ params }: { params: Promise<{ uuid: s
                     <div className="bg-paper-raised rounded-lg border border-line shadow-sm p-6">
                         <div className="flex items-start justify-between gap-4 border-b border-line-soft pb-4 mb-4">
                             <div>
-                                <h1 className="text-lg font-bold text-ink">{notice.title}</h1>
+                                <h1 className="text-lg font-bold text-ink">
+                                    {myRole === 'PARENT' && (
+                                        <span className="text-accent">[{notice.academyName}] </span>
+                                    )}
+                                    {notice.title}
+                                </h1>
                                 <p className="text-xs text-ink-faint mt-1.5">
                                     {notice.authorName} · {formatDateTime(notice.createdAt)}
                                 </p>

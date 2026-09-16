@@ -198,7 +198,12 @@ export default function NoticeListPage() {
                                         onClick={() => router.push(`/dashboard/notices/${notice.uuid}?academyId=${notice.academyId}`)}
                                         className="border-t border-line-soft hover:bg-line-soft cursor-pointer transition"
                                     >
-                                        <td className="px-4 py-3 text-ink font-medium">{notice.title}</td>
+                                        <td className="px-4 py-3 text-ink font-medium">
+                                            {myRole === 'PARENT' && (
+                                                <span className="text-accent">[{notice.academyName}] </span>
+                                            )}
+                                            {notice.title}
+                                        </td>
                                         <td className="px-4 py-3 text-ink-soft text-xs">{notice.authorName}</td>
                                         <td className="px-4 py-3 text-ink-faint text-xs">{formatDate(notice.createdAt)}</td>
                                         {canWrite && (

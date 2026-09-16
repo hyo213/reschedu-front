@@ -40,6 +40,7 @@ interface MakeupTicketPolicy {
     maxOutstandingTickets: number | null;
     monthlyIssueLimit: number | null;
     defaultValidityDays: number | null;
+    allowUseAfterEnrollmentExpired: boolean;
 }
 
 interface MakeupRequestItem {
@@ -67,12 +68,13 @@ export default function MakeupCenterPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [searchKeyword, setSearchKeyword] = useState('');
 
-    const [policy, setPolicy] = useState<MakeupTicketPolicy>({ maxOutstandingTickets: null, monthlyIssueLimit: null, defaultValidityDays: null });
+    const [policy, setPolicy] = useState<MakeupTicketPolicy>({ maxOutstandingTickets: null, monthlyIssueLimit: null, defaultValidityDays: null, allowUseAfterEnrollmentExpired: true });
     const [isPolicyModalOpen, setIsPolicyModalOpen] = useState(false);
     const [policyForm, setPolicyForm] = useState({
         maxOutstandingTickets: '', maxOutstandingUnlimited: true,
         monthlyIssueLimit: '', monthlyIssueUnlimited: true,
         defaultValidityDays: '', defaultValidityUnlimited: true,
+        allowUseAfterEnrollmentExpired: true,
     });
     const [isSubmittingPolicy, setIsSubmittingPolicy] = useState(false);
 
@@ -116,6 +118,7 @@ export default function MakeupCenterPage() {
             monthlyIssueUnlimited: policy.monthlyIssueLimit == null,
             defaultValidityDays: policy.defaultValidityDays != null ? String(policy.defaultValidityDays) : '',
             defaultValidityUnlimited: policy.defaultValidityDays == null,
+            allowUseAfterEnrollmentExpired: policy.allowUseAfterEnrollmentExpired,
         });
         setIsPolicyModalOpen(true);
     };
@@ -129,6 +132,7 @@ export default function MakeupCenterPage() {
                 maxOutstandingTickets: policyForm.maxOutstandingUnlimited ? null : Number(policyForm.maxOutstandingTickets),
                 monthlyIssueLimit: policyForm.monthlyIssueUnlimited ? null : Number(policyForm.monthlyIssueLimit),
                 defaultValidityDays: policyForm.defaultValidityUnlimited ? null : Number(policyForm.defaultValidityDays),
+                allowUseAfterEnrollmentExpired: policyForm.allowUseAfterEnrollmentExpired,
             });
             setPolicy(res.data);
             showToast('보강권 전체 정책이 저장되었습니다.', 'success');
@@ -345,7 +349,7 @@ export default function MakeupCenterPage() {
                                         <div className="text-xs text-ink-faint mt-0.5">
                                             📅 {r.targetDate} 🕒 {r.targetStartTime.slice(0, 5)}~{r.targetEndTime.slice(0, 5)}
                                             <span className="text-line mx-1">|</span>
-                                            {r.absentDate ? `원래 결석일 ${r.absentDate} (${r.originClassTitle || '수업'})` : '🎁 수동 지급된 보강권 사용'}
+                                            {r.absentDate ? `결석일 ${r.absentDate}${r.originClassTitle ? ` (${r.originClassTitle})` : ''}` : '🎁 수동 지급된 보강권 사용'}
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
@@ -766,6 +770,21 @@ export default function MakeupCenterPage() {
                                         </label>
                                     </div>
                                     <p className="mt-1 text-[11px] text-ink-faint">결석/휴무로 자동 발급되는 보강권과, 수동 지급 시 입력칸의 기본값에 쓰입니다.</p>
+                                </div>
+
+                                <div className="border-t border-line-soft pt-3">
+                                    <label className="flex items-center gap-1.5 text-xs font-semibold text-ink-soft cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={policyForm.allowUseAfterEnrollmentExpired}
+                                            onChange={(e) => setPolicyForm({ ...policyForm, allowUseAfterEnrollmentExpired: e.target.checked })}
+                                            className="accent-[var(--color-accent)]"
+                                        />
+                                        수강 기간 만료 후에도 보강권 사용 가능
+                                    </label>
+                                    <p className="mt-1 text-[11px] text-ink-faint">
+                                        체크 해제 시, 수강 기간이 끝난 학생은 보강권이 남아 있어도 보강 신청을 할 수 없습니다.
+                                    </p>
                                 </div>
 
                                 <p className="text-[11px] text-ink-faint leading-relaxed border-t border-line-soft pt-3">

@@ -18,6 +18,19 @@ interface NoticeSummary {
     createdAt: string;
 }
 
+interface ChildAiSummary {
+    studentUuid: string;
+    studentName: string;
+    academyId: number;
+    academyName: string;
+    absenceCountThisMonth: number;
+    availableTicketCount: number;
+    expiringSoonTicketCount: number;
+    usedTicketCount: number;
+    enrollmentDaysRemaining: number | null;
+    summaryText: string | null;
+}
+
 interface NextClassItem {
     classUuid: string;
     title: string | null;
@@ -45,6 +58,9 @@ export default function DashboardPage() {
     const [nextClass, setNextClass] = useState<NextClassItem | null>(null);
     const [isLoadingNextClass, setIsLoadingNextClass] = useState(false);
 
+    const [aiSummaries, setAiSummaries] = useState<ChildAiSummary[]>([]);
+    const [isLoadingAiSummary, setIsLoadingAiSummary] = useState(false);
+
     useEffect(() => {
         const role = sessionStorage.getItem('userRole') || '';
         setMyRole(role);
@@ -54,7 +70,23 @@ export default function DashboardPage() {
         }
         fetchNextClass(role);
         fetchRecentNotices(role);
+        if (role === 'PARENT') {
+            fetchAiSummaries();
+        }
     }, []);
+
+    // 학부모 전용: 자녀별 이번 달 출결/보강권/수강기간 AI 리포트
+    const fetchAiSummaries = async () => {
+        setIsLoadingAiSummary(true);
+        try {
+            const res = await axios.get('/api/members/my-children/ai-summary');
+            setAiSummaries(asArray<ChildAiSummary>(res.data));
+        } catch (error) {
+            console.error('AI 리포트 조회 실패:', error);
+        } finally {
+            setIsLoadingAiSummary(false);
+        }
+    };
 
     // 학부모는 자녀가 다니는 모든 학원의 공지를 통합해서 받아온다.
     const fetchRecentNotices = async (role: string) => {
@@ -129,7 +161,7 @@ export default function DashboardPage() {
 
     return (
         <CommonMenuBar>
-            <main className="p-6 max-w-7xl w-full mx-auto grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in">
+            <main className={`p-6 max-w-7xl w-full mx-auto grid grid-cols-1 gap-6 animate-fade-in ${myRole === 'PARENT' ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
 
                 <div className="bg-paper-raised p-6 rounded-lg border border-line shadow-sm flex flex-col justify-between">
                     <div>
@@ -184,16 +216,12 @@ export default function DashboardPage() {
                     </button>
                 </div>
 
-                <div className="bg-paper-raised p-6 rounded-lg border border-line shadow-sm flex flex-col justify-between">
-                    <div>
-                        <h3 className="text-lg font-bold text-ink mb-2">💼 원내 명부 / 신청 Center</h3>
-                        <p className="text-ink-faint text-sm mb-4">
-                            {myRole === 'PARENT'
-                                ? '소속 학원 정보 및 자녀의 인적 사항을 확인합니다.'
-                                : '등록된 원생 인적 사항 및 가입 요청을 관리합니다.'}
-                        </p>
+                {myRole !== 'PARENT' && (
+                    <div className="bg-paper-raised p-6 rounded-lg border border-line shadow-sm flex flex-col justify-between">
+                        <div>
+                            <h3 className="text-lg font-bold text-ink mb-2">💼 원내 명부 / 신청 Center</h3>
+                            <p className="text-ink-faint text-sm mb-4">등록된 원생 인적 사항 및 가입 요청을 관리합니다.</p>
 
-                        {myRole !== 'PARENT' ? (
                             <div className="space-y-2.5">
                                 <div className="p-3.5 border border-line-soft rounded-lg hover:bg-line-soft transition cursor-pointer flex justify-between items-center shadow-sm"
                                      onClick={() => router.push('/dashboard/students')}>
@@ -206,19 +234,15 @@ export default function DashboardPage() {
                                     <span className="text-success text-xs">&gt;</span>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="p-4 bg-line-soft rounded-lg text-center text-xs text-ink-faint font-medium">
-                                현재 연동된 정식 학원 멤버십 허가가 활성화되어 있습니다.
-                            </div>
-                        )}
+                        </div>
+                        <button
+                            onClick={() => router.push('/dashboard/students')}
+                            className="w-full text-center text-sm font-semibold text-paper-raised bg-accent hover:bg-accent-hover py-2.5 rounded-lg transition mt-4"
+                        >
+                            수강생 명부 진입
+                        </button>
                     </div>
-                    <button
-                        onClick={() => myRole !== 'PARENT' ? router.push('/dashboard/students') : null}
-                        className="w-full text-center text-sm font-semibold text-paper-raised bg-accent hover:bg-accent-hover py-2.5 rounded-lg transition mt-4"
-                    >
-                        {myRole === 'PARENT' ? '학원 연동 현황 확인' : '수강생 명부 진입'}
-                    </button>
-                </div>
+                )}
 
                 <div className="bg-paper-raised p-6 rounded-lg border border-line shadow-sm flex flex-col justify-between">
                     <div>
@@ -275,6 +299,54 @@ export default function DashboardPage() {
                         알림 전체보기
                     </button>
                 </div>
+
+                {myRole === 'PARENT' && (
+                    <div className="md:col-span-2 bg-paper-raised p-6 rounded-lg border border-line shadow-sm">
+                        <h3 className="text-lg font-bold text-ink mb-2">🤖 AI가 알려주는 자녀 수강 현황</h3>
+                        <p className="text-ink-faint text-sm mb-4">출결·보강권·수강 기간 현황을 AI가 요약해드립니다.</p>
+
+                        {isLoadingAiSummary ? (
+                            <div className="p-4 bg-line-soft rounded-lg text-center text-xs text-ink-faint font-medium">불러오는 중..</div>
+                        ) : aiSummaries.length === 0 ? (
+                            <div className="p-4 bg-line-soft rounded-lg text-center text-xs text-ink-faint font-medium">
+                                표시할 리포트가 없습니다.
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {aiSummaries.map((s) => (
+                                    <div key={`${s.studentUuid}-${s.academyId}`} className="p-4 bg-accent-soft/30 border border-accent-soft rounded-lg">
+                                        <div className="text-ink font-semibold text-sm mb-1.5">
+                                            {s.studentName} <span className="text-ink-faint font-normal text-xs">· {s.academyName}</span>
+                                        </div>
+
+                                        {s.summaryText && (
+                                            <p className="text-ink-soft text-xs leading-relaxed italic mb-3 border-l-2 border-accent-soft pl-2.5">
+                                                “{s.summaryText}”
+                                            </p>
+                                        )}
+
+                                        <div className="flex flex-wrap gap-1.5">
+                                            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-paper-raised border border-line-soft text-ink-soft">
+                                                이번 달 결석 {s.absenceCountThisMonth}회
+                                            </span>
+                                            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-paper-raised border border-line-soft text-ink-soft">
+                                                보강권 {s.availableTicketCount}장 보유
+                                                {s.expiringSoonTicketCount > 0 && ` (${s.expiringSoonTicketCount}장 만료 임박)`}
+                                            </span>
+                                            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-paper-raised border border-line-soft text-ink-soft">
+                                                {s.enrollmentDaysRemaining === null
+                                                    ? '수강 기간 제한 없음'
+                                                    : s.enrollmentDaysRemaining < 0
+                                                        ? '수강 기간 만료됨'
+                                                        : `수강 기간 D-${s.enrollmentDaysRemaining}`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
 
             </main>
         </CommonMenuBar>
