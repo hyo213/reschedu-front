@@ -81,6 +81,8 @@ export default function MakeupCenterPage() {
     const [detailsByStudent, setDetailsByStudent] = useState<Record<string, MakeupTicketDetail[]>>({});
     const [isLoadingDetail, setIsLoadingDetail] = useState<string | null>(null);
 
+    const [deletingTicketUuid, setDeletingTicketUuid] = useState<string | null>(null);
+
     const [pendingRequests, setPendingRequests] = useState<MakeupRequestItem[]>([]);
     const [isLoadingPending, setIsLoadingPending] = useState(false);
     const [decidingRequestUuid, setDecidingRequestUuid] = useState<string | null>(null);
@@ -207,6 +209,26 @@ export default function MakeupCenterPage() {
             console.error('보강권 상세 내역 조회 실패:', error);
         } finally {
             setIsLoadingDetail(null);
+        }
+    };
+
+    const handleDeleteTicket = async (studentUuid: string, ticketUuid: string) => {
+        if (!confirm('이 보강권을 삭제하시겠습니까? 되돌릴 수 없습니다.')) return;
+
+        setDeletingTicketUuid(ticketUuid);
+        try {
+            const academyId = sessionStorage.getItem('academyId');
+            await axios.delete(`/api/makeup-tickets/${ticketUuid}?academyId=${academyId}`);
+            showToast('보강권이 삭제되었습니다.', 'success');
+            setDetailsByStudent((prev) => ({
+                ...prev,
+                [studentUuid]: (prev[studentUuid] || []).filter((d) => d.ticketUuid !== ticketUuid),
+            }));
+            fetchCounts();
+        } catch (error) {
+            showToast(getErrorMessage(error, '보강권 삭제 중 오류가 발생했습니다.'), 'error');
+        } finally {
+            setDeletingTicketUuid(null);
         }
     };
 
@@ -504,6 +526,17 @@ export default function MakeupCenterPage() {
                                                                             <span className="inline-flex w-fit px-2 py-0.5 rounded-full bg-line-soft text-ink-soft font-medium">
                                                                                 {SOURCE_LABELS[d.source]}
                                                                             </span>
+                                                                            {d.status !== 'USED' && (
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => handleDeleteTicket(c.studentUuid, d.ticketUuid)}
+                                                                                    disabled={deletingTicketUuid === d.ticketUuid}
+                                                                                    className="px-1.5 py-0.5 text-[11px] font-bold text-danger hover:bg-danger-soft rounded-md transition disabled:opacity-50"
+                                                                                    title="보강권 삭제"
+                                                                                >
+                                                                                    {deletingTicketUuid === d.ticketUuid ? '삭제 중..' : '🗑️'}
+                                                                                </button>
+                                                                            )}
                                                                         </div>
                                                                     </li>
                                                                 ))}
