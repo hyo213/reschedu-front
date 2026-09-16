@@ -329,7 +329,7 @@ export default function MakeupApplyPage() {
                             <span>📝</span> 보강 신청
                         </h3>
                         <p className="text-ink-faint text-xs leading-relaxed max-w-md">
-                            정원이 아직 차지 않은 다른 시간대 수업에 자녀의 보강권으로 신청할 수 있습니다. 신청 후 원장/강사가 수락하면 확정됩니다.
+                            정원이 아직 차지 않은 수업에 자녀의 보강을 신청할 수 있습니다. 신청 후 원장/강사가 수락하면 확정됩니다.
                         </p>
                     </div>
 
@@ -618,7 +618,7 @@ export default function MakeupApplyPage() {
                                         <div className="text-xs text-ink-faint mt-0.5">
                                             📅 {r.targetDate} 🕒 {r.targetStartTime.slice(0, 5)}~{r.targetEndTime.slice(0, 5)}
                                             <span className="text-line mx-1">|</span>
-                                            {r.absentDate ? `원래 결석일 ${r.absentDate} (${r.originClassTitle || '수업'})` : '🎁 수동 지급된 보강권 사용'}
+                                            {r.absentDate ? `결석일 ${r.absentDate}${r.originClassTitle ? ` (${r.originClassTitle})` : ''}` : '🎁 수동 지급된 보강권 사용'}
                                         </div>
                                     </div>
                                     <span className={`inline-flex w-fit px-2.5 py-1 text-xs font-bold rounded-full ${STATUS_LABELS[r.status].className}`}>

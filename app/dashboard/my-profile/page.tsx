@@ -486,7 +486,7 @@ export default function MyProfilePage() {
 
                                 {editingChildUuid && (
                                     <div className="p-3.5 bg-line-soft border border-line-soft rounded-lg space-y-2.5">
-                                        <p className="text-xs font-bold text-ink">🏢 다니는 학원</p>
+                                        <p className="text-xs font-bold text-ink">🏢 수강중인 학원</p>
                                         <div className="space-y-1.5">
                                             {editingChildAcademies.map((a) => (
                                                 <div key={a.academyId} className="flex items-center justify-between text-xs p-2 bg-paper-raised border border-line-soft rounded-lg">
@@ -499,7 +499,7 @@ export default function MyProfilePage() {
                                         </div>
 
                                         <div className="pt-1 border-t border-line-soft space-y-2">
-                                            <label htmlFor="addAcademySearch" className="block text-[11px] font-bold text-ink-faint">+ 다른 학원도 다니게 하기</label>
+                                            <label htmlFor="addAcademySearch" className="block text-[11px] font-bold text-ink-faint">+ 타 학원 추가</label>
                                             <div className="flex gap-2">
                                                 <input
                                                     id="addAcademySearch"

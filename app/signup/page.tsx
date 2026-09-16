@@ -224,7 +224,7 @@ export default function SignUpPage() {
                         >
                             <option value="PARENT">학부모</option>
                             <option value="TEACHER">선생님</option>
-                            <option value="ADMIN">원장님 (학원 개설 가능)</option>
+                            <option value="ADMIN">대표자/원장 (학원 등록 가능)</option>
                         </select>
                     </div>
 
@@ -367,7 +367,7 @@ export default function SignUpPage() {
                     <div>
                         <label htmlFor="email" className="block text-sm font-medium text-ink-soft mb-1">이메일 주소</label>
                         <div className="flex gap-2">
-                            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="flex-1 px-4 py-2.5 border border-line rounded-md outline-none text-ink disabled:bg-line-soft" placeholder="example@com" required disabled={isAuthSent || isEmailVerified} />
+                            <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="flex-1 px-4 py-2.5 border border-line rounded-md outline-none text-ink disabled:bg-line-soft" placeholder="example@naver.com" required disabled={isAuthSent || isEmailVerified} />
                             <button type="button" onClick={handleSendAuthCode} disabled={!isEmailAvailable || isEmailVerified} className="px-3 text-xs font-semibold rounded-md bg-ink text-paper disabled:bg-line disabled:text-ink-faint whitespace-nowrap">
                                 {isAuthSent ? '재발송' : '인증요청'}
                             </button>
