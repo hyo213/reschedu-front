@@ -41,8 +41,9 @@ export default function RootLayout({
     <html
       lang="ko"
       className={`${pretendard.variable} ${plexSerif.variable} ${plexMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-paper text-ink font-body">
+      <body className="min-h-full flex flex-col bg-paper text-ink font-body" suppressHydrationWarning>
         <ToastProvider>
           <AxiosInterceptorProvider />
           <NotificationListener />

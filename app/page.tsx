@@ -42,7 +42,7 @@ export default function LoginPage() {
           <p className="text-ink-soft text-sm mt-1">학원 보강 관리 시스템에 로그인하세요</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6 bg-paper-raised border border-line rounded-lg p-8">
+        <form onSubmit={handleLogin} className="space-y-6 bg-paper-raised border border-line rounded-lg p-8" suppressHydrationWarning>
           <div>
             <label htmlFor="loginId" className="block text-sm font-medium text-ink-soft mb-2">아이디 (이메일 또는 연락처)</label>
             <input
@@ -53,6 +53,7 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 border border-line rounded-md focus:ring-2 focus:ring-accent/40 focus:border-accent outline-none text-ink bg-paper-raised"
                 placeholder="이메일 주소 또는 휴대폰 번호 입력"
                 required
+                suppressHydrationWarning
             />
           </div>
 
@@ -66,6 +67,7 @@ export default function LoginPage() {
                 className="w-full px-4 py-3 border border-line rounded-md focus:ring-2 focus:ring-accent/40 focus:border-accent outline-none text-ink bg-paper-raised"
                 placeholder="••••••••"
                 required
+                suppressHydrationWarning
             />
           </div>
 
